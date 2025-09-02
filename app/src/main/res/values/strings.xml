@@ -1,4 +1,19 @@
 <resources>
+    <string name="level_format">%d уровень</string>
+    <string name="health_format">%d HP</string>
+    <string name="mana_format">%d MP</string>
+    <string name="refreshing">Обновление...</string>
+    <string name="refresh">Обновить</string>
+    <string name="logout_title">Выход</string>
+    <string name="logout_message">Вы действительно хотите выйти?</string>
+    <string name="logout_success">Вы успешно вышли</string>
+    <string name="logout_failed">Ошибка выхода</string>
+    <string name="yes">Да</string>
+    <string name="no">Нет</string>
+    <string name="ok">ОК</string>
+    <string name="session_expired_title">Сессия истекла</string>
+    <string name="session_expired_message">Пожалуйста, войдите снова</string>
+    <string name="idle_notification">Вы бездействуете</string>
     <string name="app_name">ANLC</string>
     <string name="app_full_name">Android Neverlands Client</string>
     <string name="action_settings">Настройки</string>

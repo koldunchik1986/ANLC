@@ -5,6 +5,13 @@ package com.neverlands.anlc;
  * Этот класс содержит все константы, используемые в приложении
  */
 public class AppConsts {
+    // Константы для профилей
+    public static final String PROFILE_EXTENSION = ".profile";
+    public static final int REQUEST_CREATE_PROFILE = 1001;
+    public static final int REQUEST_EDIT_PROFILE = 1002;
+    public static final int REQUEST_SELECT_PROFILE = 1003;
+    public static final int REQUEST_ASK_PASSWORD = 1004;
+    public static final int REQUEST_AUTO_LOGON = 1005;
     // Информация о приложении
     public static final String APP_NAME = "ABClient";
     public static final String APP_VERSION = "1.0.0";

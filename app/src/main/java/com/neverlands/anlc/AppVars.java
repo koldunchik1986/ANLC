@@ -11,6 +11,13 @@ import org.json.JSONObject;
 public class AppVars {
     // Контекст приложения
     private static Context applicationContext;
+
+    // Глобальные переменные для совместимости
+    public static com.neverlands.anlc.myprofile.UserConfig Profile;
+    public static Object MainForm;
+    public static Object LocalProxy;
+    public static Object ClearExplorerCacheFormMain;
+    public static AppVersion AppVersion;
     
     // Менеджер аутентификации
     private static AuthManager authManager;
