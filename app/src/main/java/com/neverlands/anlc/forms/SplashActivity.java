@@ -13,7 +13,7 @@ import com.neverlands.anlc.ANLCApplication;
 import com.neverlands.anlc.AppVars;
 import com.neverlands.anlc.R;
 import com.neverlands.anlc.VersionClass;
-import com.neverlands.anlc.abforms.MainActivity;
+// import com.neverlands.anlc.abforms.MainActivity;
 import com.neverlands.anlc.abproxy.CookiesManager;
 import com.neverlands.anlc.helpers.DataManager;
 import com.neverlands.anlc.map.Map;
@@ -44,7 +44,7 @@ public class SplashActivity extends AppCompatActivity {
         statusTextView = findViewById(R.id.statusTextView);
 
         // Отображаем версию приложения
-        versionTextView.setText(AppVars.AppVersion.getFullVersion());
+    // versionTextView.setText(AppVars.AppVersion.getFullVersion());
 
         // Создаем пул потоков для выполнения задач инициализации
         executorService = Executors.newSingleThreadExecutor();
@@ -124,8 +124,8 @@ public class SplashActivity extends AppCompatActivity {
      */
     private void startMainActivity() {
         new Handler(Looper.getMainLooper()).post(() -> {
-            Intent intent = new Intent(SplashActivity.this, MainActivity.class);
-            startActivity(intent);
+            // Intent intent = new Intent(SplashActivity.this, MainActivity.class);
+            // startActivity(intent);
             finish();
         });
     }

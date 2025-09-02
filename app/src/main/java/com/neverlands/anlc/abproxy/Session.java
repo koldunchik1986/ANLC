@@ -80,7 +80,7 @@ public class Session implements Runnable {
             // Создание соединения с сервером
             HttpURLConnection connection;
             if (useExternalProxy && AppVars.LocalProxy != null) {
-                connection = (HttpURLConnection) url.openConnection(AppVars.LocalProxy);
+            // connection = (HttpURLConnection) url.openConnection(AppVars.LocalProxy);
             } else {
                 connection = (HttpURLConnection) url.openConnection();
             }

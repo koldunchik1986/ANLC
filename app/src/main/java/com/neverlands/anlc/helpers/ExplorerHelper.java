@@ -84,7 +84,7 @@ public class ExplorerHelper {
     private static void updateClearCacheStatus(final String status) {
         if (AppVars.ClearExplorerCacheFormMain != null) {
             new Handler(Looper.getMainLooper()).post(() -> {
-                AppVars.ClearExplorerCacheFormMain.updateStatus(status);
+                    // AppVars.ClearExplorerCacheFormMain.updateStatus(status);
             });
         }
     }

@@ -69,22 +69,22 @@ public class AppTimerManager {
         switch (timerName) {
             case "TimerCrap":
                 if (AppVars.MainForm != null) {
-                    AppVars.MainForm.timerCrap();
+                        // AppVars.MainForm.timerCrap();
                 }
                 break;
             case "TimerClock":
                 if (AppVars.MainForm != null) {
-                    AppVars.MainForm.timerClock();
+                        // AppVars.MainForm.timerClock();
                 }
                 break;
             case "TimerTray":
                 if (AppVars.MainForm != null) {
-                    AppVars.MainForm.trayIconTick();
+                        // AppVars.MainForm.trayIconTick();
                 }
                 break;
             case "TimerCheckInfo":
                 if (AppVars.MainForm != null) {
-                    AppVars.MainForm.checkInfo();
+                        // AppVars.MainForm.checkInfo();
                 }
                 break;
             // Добавьте обработку других таймеров по мере необходимости

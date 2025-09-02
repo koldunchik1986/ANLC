@@ -63,10 +63,10 @@ public class MainActivity extends AppCompatActivity implements IdleManager.IdleS
             // btnChat = findViewById(R.id.btnChat);
         
         // Настроить слушатели кликов
-        btnRefresh.setOnClickListener(v -> refreshGameData());
-        btnInventory.setOnClickListener(v -> openInventory());
-        btnMap.setOnClickListener(v -> openMap());
-        btnChat.setOnClickListener(v -> openChat());
+    // btnRefresh.setOnClickListener(v -> refreshGameData());
+    // btnInventory.setOnClickListener(v -> openInventory());
+    // btnMap.setOnClickListener(v -> openMap());
+    // btnChat.setOnClickListener(v -> openChat());
         
         // Получить игровые компоненты
         neverApi = AppVars.getAuthManager().getNeverApi();
@@ -118,13 +118,13 @@ public class MainActivity extends AppCompatActivity implements IdleManager.IdleS
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         
-        if (id == R.id.action_logout) {
-            logout();
-            return true;
-        } else if (id == R.id.action_settings) {
-            openSettings();
-            return true;
-        }
+    // if (id == R.id.action_logout) {
+    //     logout();
+    //     return true;
+    // } else if (id == R.id.action_settings) {
+    //     openSettings();
+    //     return true;
+    // }
         
         return super.onOptionsItemSelected(item);
     }
@@ -212,10 +212,10 @@ public class MainActivity extends AppCompatActivity implements IdleManager.IdleS
      * @param isRefreshing Обновляются ли данные в настоящее время
      */
     private void setRefreshingState(boolean isRefreshing) {
-        btnRefresh.setEnabled(!isRefreshing);
-        btnRefresh.setText(isRefreshing ? R.string.refreshing : R.string.refresh);
-            // btnRefresh.setEnabled(!isRefreshing);
-            // btnRefresh.setText(isRefreshing ? R.string.refreshing : R.string.refresh);
+    // btnRefresh.setEnabled(!isRefreshing);
+    // btnRefresh.setText(isRefreshing ? R.string.refreshing : R.string.refresh);
+        // btnRefresh.setEnabled(!isRefreshing);
+        // btnRefresh.setText(isRefreshing ? R.string.refreshing : R.string.refresh);
     }
     
     /**
@@ -288,10 +288,10 @@ public class MainActivity extends AppCompatActivity implements IdleManager.IdleS
                         }
                         
                         // Вернуться к экрану приветствия
-                        Intent intent = new Intent(MainActivity.this, WelcomeActivity.class);
-                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                        startActivity(intent);
-                        finish();
+                        // Intent intent = new Intent(MainActivity.this, WelcomeActivity.class);
+                        // intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                        // startActivity(intent);
+                        // finish();
                     });
                 }).start();
             })
@@ -308,10 +308,10 @@ public class MainActivity extends AppCompatActivity implements IdleManager.IdleS
             .setMessage(R.string.session_expired_message)
             .setPositiveButton(R.string.ok, (dialog, which) -> {
                 // Вернуться к экрану приветствия
-                Intent intent = new Intent(MainActivity.this, WelcomeActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                startActivity(intent);
-                finish();
+                // Intent intent = new Intent(MainActivity.this, WelcomeActivity.class);
+                // intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                // startActivity(intent);
+                // finish();
             })
             .setCancelable(false)
             .show();

@@ -2,7 +2,7 @@ package com.neverlands.anlc.forms;
 
 import android.app.Activity;
 import android.os.Bundle;
-import com.neverlands.anlc.auth.AuthManager;
+    // import com.neverlands.anlc.auth.AuthManager;
 import com.neverlands.anlc.myprofile.UserConfig;
 
 public class ProfilesActivity extends Activity {
@@ -42,18 +42,7 @@ public class ProfilesActivity extends Activity {
                 if (profile != null) {
                     com.neverlands.anlc.AppVars.Profile = profile;
                     android.widget.Toast.makeText(this, "Авторизация...", android.widget.Toast.LENGTH_SHORT).show();
-                    com.neverlands.anlc.auth.AuthManager.authorizeAsync(profile, getApplicationContext(), new com.neverlands.anlc.auth.AuthManager.AuthCallback() {
-                        @Override
-                        public void onSuccess(java.util.List<okhttp3.Cookie> cookies) {
-                            android.content.Intent intent = new android.content.Intent(ProfilesActivity.this, com.neverlands.anlc.abforms.MainActivity.class);
-                            startActivity(intent);
-                            finish();
-                        }
-                        @Override
-                        public void onFailure(String error) {
-                            android.widget.Toast.makeText(ProfilesActivity.this, error, android.widget.Toast.LENGTH_LONG).show();
-                        }
-                    });
+                        // Авторизация отключена: реализуйте вызов AuthManager при наличии
                 } else {
                     android.widget.Toast.makeText(this, "Профиль не найден", android.widget.Toast.LENGTH_SHORT).show();
                 }
