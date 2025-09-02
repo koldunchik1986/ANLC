@@ -1,291 +1,102 @@
 package com.neverlands.anlc;
 
 /**
- * Класс с константами приложения, аналог AppConsts.cs
+ * AppConsts - Константы приложения
+ * Этот класс содержит все константы, используемые в приложении
  */
 public class AppConsts {
-    /**
-     * Расширение файла профиля
-     */
-    public static final String PROFILE_EXTENSION = ".anlc";
-
-    /**
-     * Код запроса для создания профиля
-     */
-    public static final int REQUEST_CREATE_PROFILE = 1001;
-
-    /**
-     * Код запроса для редактирования профиля
-     */
-    public static final int REQUEST_EDIT_PROFILE = 1002;
-
-    /**
-     * Код запроса для выбора профиля
-     */
-    public static final int REQUEST_SELECT_PROFILE = 1003;
-
-    /**
-     * Код запроса для ввода пароля
-     */
-    public static final int REQUEST_ASK_PASSWORD = 1004;
-
-    /**
-     * Код запроса для автологона
-     */
-    public static final int REQUEST_AUTO_LOGON = 1005;
-
-    /**
-     * Базовый URL игры
-     */
-    public static final String GAME_BASE_URL = "http://www.neverlands.ru/";
-
-    /**
-     * URL главной страницы игры
-     */
-    public static final String GAME_MAIN_URL = GAME_BASE_URL + "main.php";
-
-    /**
-     * URL форума игры
-     */
-    public static final String GAME_FORUM_URL = "http://forum.neverlands.ru/";
-
-    /**
-     * URL для выхода из игры
-     */
-    public static final String GAME_EXIT_URL = GAME_BASE_URL + "exit.php";
-
-    /**
-     * Путь к директории профилей
-     */
-    public static final String PROFILES_DIRECTORY = "profiles";
-
-    /**
-     * Путь к директории логов
-     */
-    public static final String LOGS_DIRECTORY = "logs";
-
-    /**
-     * Путь к директории кэша
-     */
-    public static final String CACHE_DIRECTORY = "cache";
-
-    /**
-     * Путь к директории карт
-     */
-    public static final String MAPS_DIRECTORY = "maps";
-
-    /**
-     * Путь к директории загрузок
-     */
-    public static final String DOWNLOADS_DIRECTORY = "downloads";
-
-    /**
-     * Имя файла с контактами
-     */
-    public static final String CONTACTS_FILE = "contacts.xml";
-
-    /**
-     * Имя файла с пользователями чата
-     */
-    public static final String CHAT_USERS_FILE = "chatusers.xml";
-
-    /**
-     * Имя файла с закладками
-     */
-    public static final String FAVORITES_FILE = "favorites.xml";
-
-    /**
-     * Имя файла с телепортами
-     */
-    public static final String TELEPORTS_FILE = "teleports.xml";
-
-    /**
-     * Имя файла с картой
-     */
-    public static final String MAP_FILE = "map.xml";
-
-    /**
-     * Имя файла с предметами
-     */
-    public static final String THINGS_FILE = "things.xml";
-
-    /**
-     * Имя файла с клетками
-     */
-    public static final String CELLS_FILE = "cells.xml";
-
-    /**
-     * Имя файла с нейросетью
-     */
-    public static final String NEURO_FILE = "neuro.dat";
-
-    /**
-     * Максимальное количество попыток подключения
-     */
-    public static final int MAX_CONNECTION_ATTEMPTS = 3;
-
-    /**
-     * Таймаут подключения (в миллисекундах)
-     */
-    public static final int CONNECTION_TIMEOUT = 30000;
-
-    /**
-     * Таймаут чтения (в миллисекундах)
-     */
-    public static final int READ_TIMEOUT = 30000;
-
-    /**
-     * Интервал проверки соединения (в миллисекундах)
-     */
-    public static final int CONNECTION_CHECK_INTERVAL = 60000;
-
-    /**
-     * Интервал обновления часов (в миллисекундах)
-     */
-    public static final int CLOCK_UPDATE_INTERVAL = 1000;
-
-    /**
-     * Интервал обновления интерфейса (в миллисекундах)
-     */
-    public static final int UI_UPDATE_INTERVAL = 100;
-
-    /**
-     * Интервал проверки информации (в миллисекундах)
-     */
-    public static final int INFO_CHECK_INTERVAL = 5000;
-
-    /**
-     * Интервал обработки мусора (в миллисекундах)
-     */
-    public static final int CRAP_INTERVAL = 10000;
-
-    /**
-     * Интервал обновления трея (в миллисекундах)
-     */
-    public static final int TRAY_UPDATE_INTERVAL = 500;
-
-    /**
-     * Максимальное количество вкладок
-     */
-    public static final int MAX_TABS = 10;
-
-    /**
-     * Максимальное количество контактов
-     */
-    public static final int MAX_CONTACTS = 1000;
-
-    /**
-     * Максимальное количество пользователей чата
-     */
-    public static final int MAX_CHAT_USERS = 1000;
-
-    /**
-     * Максимальное количество закладок
-     */
-    public static final int MAX_FAVORITES = 100;
-
-    /**
-     * Максимальное количество телепортов
-     */
-    public static final int MAX_TELEPORTS = 100;
-
-    /**
-     * Максимальное количество предметов
-     */
-    public static final int MAX_THINGS = 10000;
-
-    /**
-     * Максимальное количество клеток
-     */
-    public static final int MAX_CELLS = 10000;
-
-    /**
-     * Максимальное количество записей в логе
-     */
-    public static final int MAX_LOG_ENTRIES = 1000;
-
-    /**
-     * Максимальное количество записей в чате
-     */
-    public static final int MAX_CHAT_ENTRIES = 1000;
-
-    /**
-     * Максимальное количество записей в истории команд
-     */
-    public static final int MAX_COMMAND_HISTORY = 100;
-
-    /**
-     * Максимальное количество записей в истории поиска
-     */
-    public static final int MAX_SEARCH_HISTORY = 100;
-
-    /**
-     * Максимальное количество записей в истории URL
-     */
-    public static final int MAX_URL_HISTORY = 100;
-
-    /**
-     * Максимальное количество записей в истории приватов
-     */
-    public static final int MAX_PRIVATE_HISTORY = 100;
-
-    /**
-     * Максимальное количество записей в истории боев
-     */
-    public static final int MAX_FIGHT_HISTORY = 100;
-
-    /**
-     * Максимальное количество записей в истории разделки
-     */
-    public static final int MAX_RAZDELKA_HISTORY = 100;
-
-    /**
-     * Максимальное количество записей в истории рыбалки
-     */
-    public static final int MAX_FISHING_HISTORY = 100;
-
-    /**
-     * Максимальное количество записей в истории торговли
-     */
-    public static final int MAX_TRADE_HISTORY = 100;
-
-    /**
-     * Максимальное количество записей в истории перемещений
-     */
-    public static final int MAX_MOVE_HISTORY = 100;
-
-    /**
-     * Максимальное количество записей в истории действий
-     */
-    public static final int MAX_ACTION_HISTORY = 100;
-
-    /**
-     * Максимальное количество записей в истории ошибок
-     */
-    public static final int MAX_ERROR_HISTORY = 100;
-
-    /**
-     * Максимальное количество записей в истории системных сообщений
-     */
-    public static final int MAX_SYSTEM_HISTORY = 100;
-
-    /**
-     * Максимальное количество записей в истории отладки
-     */
-    public static final int MAX_DEBUG_HISTORY = 100;
-
-    /**
-     * Максимальное количество записей в истории информации
-     */
-    public static final int MAX_INFO_HISTORY = 100;
-
-    /**
-     * Максимальное количество записей в истории предупреждений
-     */
-    public static final int MAX_WARNING_HISTORY = 100;
-
-    /**
-     * Максимальное количество записей в истории критических ошибок
-     */
-    public static final int MAX_CRITICAL_HISTORY = 100;
+    // Информация о приложении
+    public static final String APP_NAME = "ABClient";
+    public static final String APP_VERSION = "1.0.0";
+    public static final String APP_BUILD = "1";
+    
+    // URL серверов
+    public static final String BASE_URL = "https://www.neverlands.ru/";
+    public static final String GAME_URL = BASE_URL + "game.php";
+    public static final String MAIN_URL = BASE_URL + "main.php";
+    public static final String CHAT_URL = BASE_URL + "ch.php";
+    public static final String MAP_URL = BASE_URL + "map.php";
+    
+    // Конечные точки API
+    public static final String LOGIN_ENDPOINT = BASE_URL;
+    public static final String LOGOUT_ENDPOINT = BASE_URL + "?action=logout";
+    public static final String CHARACTER_INFO_ENDPOINT = GAME_URL + "?act=who";
+    public static final String INVENTORY_ENDPOINT = GAME_URL + "?act=inv&s=1";
+    public static final String MAP_ENDPOINT = GAME_URL + "?act=map";
+    
+    // Параметры запроса
+    public static final String PARAM_ACTION = "action";
+    public static final String PARAM_LOGIN = "login";
+    public static final String PARAM_PASSWORD = "pass";
+    public static final String PARAM_SAVE = "save";
+    public static final String PARAM_ACT = "act";
+    public static final String PARAM_DIR = "dir";
+    public static final String PARAM_TO = "to";
+    public static final String PARAM_MSG = "msg";
+    
+    // Значения действий
+    public static final String ACTION_LOGIN = "login";
+    public static final String ACTION_LOGOUT = "logout";
+    public static final String ACTION_WHO = "who";
+    public static final String ACTION_INV = "inv";
+    public static final String ACTION_MAP = "map";
+    public static final String ACTION_GO = "go";
+    public static final String ACTION_SAY = "say";
+    
+    // Каналы чата
+    public static final String CHANNEL_GENERAL = "general";
+    public static final String CHANNEL_TRADE = "trade";
+    public static final String CHANNEL_CLAN = "clan";
+    
+    // Значения направлений
+    public static final String DIR_NORTH = "n";
+    public static final String DIR_SOUTH = "s";
+    public static final String DIR_EAST = "e";
+    public static final String DIR_WEST = "w";
+    public static final String DIR_NORTHEAST = "ne";
+    public static final String DIR_NORTHWEST = "nw";
+    public static final String DIR_SOUTHEAST = "se";
+    public static final String DIR_SOUTHWEST = "sw";
+    
+    // SharedPreferences
+    public static final String PREFS_NAME = "ABClientPrefs";
+    public static final String KEY_CURRENT_PROFILE = "currentProfile";
+    public static final String KEY_PROFILE_PREFIX = "profile_";
+    public static final String KEY_USERNAME = "_username";
+    public static final String KEY_PASSWORD = "_password";
+    public static final String KEY_SAVE_PASSWORD = "_savePassword";
+    
+    // Тайм-ауты простоя (миллисекунды)
+    public static final long IDLE_TIMEOUT = 5 * 60 * 1000; // 5 минут
+    public static final long KEEPALIVE_INTERVAL = 2 * 60 * 1000; // 2 минуты
+    
+    // Сообщения об ошибках
+    public static final String ERROR_LOGIN_FAILED = "Неверный логин или пароль";
+    public static final String ERROR_LOGIN_FAILED_EN = "Incorrect login or password";
+    public static final String ERROR_NOT_AUTHORIZED = "Вы не авторизованы";
+    public static final String ERROR_NOT_AUTHORIZED_EN = "You are not authorized";
+    
+    // Дополнительные параметры Intent
+    public static final String EXTRA_PROFILE_NAME = "profileName";
+    public static final String EXTRA_USERNAME = "username";
+    public static final String EXTRA_PASSWORD = "password";
+    public static final String EXTRA_SAVE_PASSWORD = "savePassword";
+    
+    // Коды запросов
+    public static final int REQUEST_LOGIN = 1001;
+    public static final int REQUEST_PROFILE = 1002;
+    
+    // Коды результатов
+    public static final int RESULT_PROFILE_CREATED = 2001;
+    public static final int RESULT_PROFILE_DELETED = 2002;
+    
+    // Флаги отладки
+    public static final boolean DEBUG_HTTP = true;
+    public static final boolean DEBUG_API = true;
+    public static final boolean DEBUG_AUTH = true;
+    
+    // Приватный конструктор для предотвращения создания экземпляра
+    private AppConsts() {
+        // Этот класс не должен быть создан как экземпляр
+    }
 }

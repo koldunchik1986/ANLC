@@ -1,254 +1,330 @@
-package com.neverlands.anlc.auth;
+package com.neverlands.anlc;
 
 import android.content.Context;
-import android.os.Handler;
-import android.os.Looper;
+import android.content.SharedPreferences;
 import android.util.Log;
 
-import com.neverlands.anlc.myprofile.UserConfig;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.Charset;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import okhttp3.Cookie;
-import okhttp3.CookieJar;
-import okhttp3.HttpUrl;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
-import okhttp3.FormBody;
-
+/**
+ * AuthManager - Управляет аутентификацией и профилями пользователей
+ * Этот класс интегрируется с NeverApi для фактической аутентификации
+ */
 public class AuthManager {
-    private static java.util.Map<String, ProfileCookieJar> profileCookieJars = new java.util.HashMap<>();
-    private static java.util.Map<String, OkHttpClient> profileClients = new java.util.HashMap<>();
-    private static java.util.Map<String, Thread> heartbeatThreads = new java.util.HashMap<>();
-
     private static final String TAG = "AuthManager";
-    private static final String LOGIN_URL = "http://neverlands.ru/game.php";
-    private static final String MAIN_URL = "http://neverlands.ru/main.php";
-    private static final String BASE_URL = "http://neverlands.ru/";
-
-    public static interface AuthCallback {
-        void onSuccess(List<Cookie> cookies);
-        void onFailure(String error);
+    
+    // Ключи для SharedPreferences
+    private static final String PREFS_NAME = "ABClientPrefs";
+    private static final String KEY_CURRENT_PROFILE = "currentProfile";
+    private static final String KEY_PROFILE_PREFIX = "profile_";
+    private static final String KEY_USERNAME = "_username";
+    private static final String KEY_PASSWORD = "_password";
+    private static final String KEY_SAVE_PASSWORD = "_savePassword";
+    
+    // Экземпляр синглтона
+    private static AuthManager instance;
+    
+    // Контекст приложения
+    private final Context context;
+    
+    // Экземпляр NeverApi для аутентификации
+    private final NeverApi neverApi;
+    
+    // Информация о текущем профиле
+    private String currentProfileName;
+    private String currentUsername;
+    private String currentPassword;
+    private boolean currentSavePassword;
+    
+    // Состояние аутентификации
+    private boolean isAuthenticated = false;
+    
+    /**
+     * Приватный конструктор для обеспечения шаблона синглтона
+     * @param context Контекст приложения
+     */
+    private AuthManager(Context context) {
+        this.context = context.getApplicationContext();
+        this.neverApi = new NeverApi();
     }
-
-    public static void authorizeAsync(UserConfig profile, Context context, AuthCallback callback) {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.execute(() -> {
-            try {
-                // 1. Очистить cookies, если нужно
-                String loginKey = profile.getLogin();
-                ProfileCookieJar cookieJar = new ProfileCookieJar(profile);
-                profileCookieJars.put(loginKey, cookieJar);
-                cookieJar.clear();
-
-                OkHttpClient client = new OkHttpClient.Builder()
-                        .cookieJar(cookieJar)
-                        .build();
-                profileClients.put(loginKey, client);
-
-                // 2. GET watermark
-                Request getRequest = new Request.Builder()
-                        .url(BASE_URL)
-                        .header("User-Agent", getUserAgent())
-                        .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
-                        .header("Accept-Encoding", "gzip, deflate")
-                        .header("Accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7")
-                        .build();
-                Response getResponse = client.newCall(getRequest).execute();
-                logToFile(context, "GET watermark: " + getResponse.code());
-                getResponse.close();
-
-                // 3. POST login
-                String login = encode(profile.getLogin());
-                String password = encode(profile.getPassword());
-                FormBody postBody = new FormBody.Builder(Charset.forName("windows-1251"))
-                        .addEncoded("user", login)
-                        .addEncoded("pass", password)
-                        .build();
-                Request postRequest = new Request.Builder()
-                        .url(LOGIN_URL)
-                        .post(postBody)
-                        .header("User-Agent", getUserAgent())
-                        .header("Content-Type", "application/x-www-form-urlencoded; charset=windows-1251")
-                        .header("Referer", BASE_URL)
-                        .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
-                        .header("Accept-Encoding", "gzip, deflate")
-                        .header("Accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7")
-                        .build();
-                Response postResponse = client.newCall(postRequest).execute();
-                logToFile(context, "POST login: " + postResponse.code());
-                // Явно обновляем куки из ответа POST
-                List<Cookie> postCookies = Cookie.parseAll(HttpUrl.get(LOGIN_URL), postResponse.headers());
-                cookieJar.saveFromResponse(HttpUrl.get(LOGIN_URL), postCookies);
-                postResponse.close();
-
-                // 4. Сохраняем cookies после POST
-                List<Cookie> cookies = cookieJar.getCookies();
-                String cookieHeader = "";
-                if (cookies != null && !cookies.isEmpty()) {
-                    StringBuilder sb = new StringBuilder();
-                    for (Cookie c : cookies) {
-                        sb.append(c.name()).append("=").append(c.value()).append("; ");
-                    }
-                    cookieHeader = sb.toString();
-                }
-
-                // 5. GET main.php с этими cookies
-                Request mainRequest = new Request.Builder()
-                        .url(MAIN_URL)
-                        .header("User-Agent", getUserAgent())
-                        .header("Referer", BASE_URL)
-                        .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
-                        .header("Accept-Encoding", "gzip, deflate")
-                        .header("Accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7")
-                        .header("Cookie", cookieHeader)
-                        .build();
-                Response mainResponse = client.newCall(mainRequest).execute();
-                String mainHtml = decodeResponse(mainResponse);
-                logToFile(context, "GET main.php: " + mainResponse.code());
-                logToFile(context, "main.php sent cookies: " + cookieHeader);
-                logToFile(context, "main.php response: " + mainHtml);
-                mainResponse.close();
-
-                // 6. Проверить результат
-                if (mainHtml.contains("id=\"auth_form\"") || mainHtml.contains("captcha")) {
-                    postToMain(callback, false, "Ошибка авторизации: требуется повторный вход или капча");
-                    return;
-                }
-
-                // 7. Успех
-                startHeartbeat(loginKey, client, cookieJar, context);
-                postToMain(callback, true, cookies);
-            } catch (Exception e) {
-                logToFile(context, "Auth error: " + e.getMessage());
-                postToMain(callback, false, "Ошибка авторизации: " + e.getMessage());
-            } finally {
-                executor.shutdown(); // Важно: освобождаем ресурсы
+    
+    /**
+     * Получить экземпляр синглтона
+     * @param context Контекст приложения
+     * @return Экземпляр AuthManager
+     */
+    public static synchronized AuthManager getInstance(Context context) {
+        if (instance == null) {
+            instance = new AuthManager(context);
+        }
+        return instance;
+    }
+    
+    /**
+     * Загрузить последний использованный профиль
+     * @return true если профиль был загружен, false в противном случае
+     */
+    public boolean loadLastProfile() {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        String profileName = prefs.getString(KEY_CURRENT_PROFILE, null);
+        
+        if (profileName != null) {
+            return loadProfile(profileName);
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Загрузить определенный профиль
+     * @param profileName Имя профиля для загрузки
+     * @return true если профиль был загружен, false в противном случае
+     */
+    public boolean loadProfile(String profileName) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        String prefixKey = KEY_PROFILE_PREFIX + profileName;
+        
+        String username = prefs.getString(prefixKey + KEY_USERNAME, null);
+        String password = prefs.getString(prefixKey + KEY_PASSWORD, null);
+        boolean savePassword = prefs.getBoolean(prefixKey + KEY_SAVE_PASSWORD, false);
+        
+        if (username != null) {
+            currentProfileName = profileName;
+            currentUsername = username;
+            currentPassword = password; // Может быть null, если не сохранен
+            currentSavePassword = savePassword;
+            
+            // Сохранить как текущий профиль
+            prefs.edit().putString(KEY_CURRENT_PROFILE, profileName).apply();
+            
+            Log.d(TAG, "Загружен профиль: " + profileName + " с именем пользователя: " + username);
+            return true;
+        }
+        
+        Log.e(TAG, "Не удалось загрузить профиль: " + profileName);
+        return false;
+    }
+    
+    /**
+     * Сохранить текущий профиль
+     * @return true если профиль был сохранен, false в противном случае
+     */
+    public boolean saveCurrentProfile() {
+        if (currentProfileName == null || currentUsername == null) {
+            Log.e(TAG, "Невозможно сохранить профиль: Нет текущего профиля");
+            return false;
+        }
+        
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        
+        String prefixKey = KEY_PROFILE_PREFIX + currentProfileName;
+        editor.putString(prefixKey + KEY_USERNAME, currentUsername);
+        
+        if (currentSavePassword && currentPassword != null) {
+            editor.putString(prefixKey + KEY_PASSWORD, currentPassword);
+        } else {
+            editor.remove(prefixKey + KEY_PASSWORD);
+        }
+        
+        editor.putBoolean(prefixKey + KEY_SAVE_PASSWORD, currentSavePassword);
+        editor.putString(KEY_CURRENT_PROFILE, currentProfileName);
+        
+        boolean result = editor.commit();
+        Log.d(TAG, "Профиль сохранен: " + currentProfileName + ", результат: " + result);
+        
+        return result;
+    }
+    
+    /**
+     * Создать новый профиль
+     * @param profileName Имя профиля
+     * @param username Имя пользователя
+     * @param password Пароль
+     * @param savePassword Сохранять ли пароль
+     * @return true если профиль был создан, false в противном случае
+     */
+    public boolean createProfile(String profileName, String username, String password, boolean savePassword) {
+        if (profileName == null || username == null) {
+            Log.e(TAG, "Невозможно создать профиль: Отсутствует необходимая информация");
+            return false;
+        }
+        
+        currentProfileName = profileName;
+        currentUsername = username;
+        currentPassword = password;
+        currentSavePassword = savePassword;
+        
+        return saveCurrentProfile();
+    }
+    
+    /**
+     * Удалить профиль
+     * @param profileName Имя профиля для удаления
+     * @return true если профиль был удален, false в противном случае
+     */
+    public boolean deleteProfile(String profileName) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        
+        String prefixKey = KEY_PROFILE_PREFIX + profileName;
+        editor.remove(prefixKey + KEY_USERNAME);
+        editor.remove(prefixKey + KEY_PASSWORD);
+        editor.remove(prefixKey + KEY_SAVE_PASSWORD);
+        
+        // Если это был текущий профиль, очистить его
+        if (profileName.equals(prefs.getString(KEY_CURRENT_PROFILE, null))) {
+            editor.remove(KEY_CURRENT_PROFILE);
+        }
+        
+        boolean result = editor.commit();
+        
+        // Если мы удалили текущий профиль, очистить данные текущего профиля
+        if (profileName.equals(currentProfileName)) {
+            currentProfileName = null;
+            currentUsername = null;
+            currentPassword = null;
+            currentSavePassword = false;
+            isAuthenticated = false;
+        }
+        
+        Log.d(TAG, "Профиль удален: " + profileName + ", результат: " + result);
+        return result;
+    }
+    
+    /**
+     * Получить все имена профилей
+     * @return Массив имен профилей
+     */
+    public String[] getProfileNames() {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        Map<String, ?> allPrefs = prefs.getAll();
+        
+        Set<String> profileNames = new HashSet<>();
+        
+        for (String key : allPrefs.keySet()) {
+            if (key.startsWith(KEY_PROFILE_PREFIX) && key.endsWith(KEY_USERNAME)) {
+                String profileName = key.substring(KEY_PROFILE_PREFIX.length(), 
+                                                 key.length() - KEY_USERNAME.length());
+                profileNames.add(profileName);
             }
-        });
-    }
-
-    // Декодирование ответа с поддержкой gzip и windows-1251
-    private static String decodeResponse(Response response) throws IOException {
-        String encoding = response.header("Content-Encoding", "");
-        String charset = "windows-1251";
-        String contentType = response.header("Content-Type", "");
-        if (contentType != null && contentType.contains("charset=")) {
-            String[] parts = contentType.split("charset=");
-            if (parts.length > 1) charset = parts[1].trim();
         }
-        byte[] raw = response.body().bytes();
-        byte[] decompressed = raw;
-        if (encoding.contains("gzip")) {
-            java.util.zip.GZIPInputStream gzipStream = new java.util.zip.GZIPInputStream(new java.io.ByteArrayInputStream(raw));
-            decompressed = gzipStream.readAllBytes();
+        
+        return profileNames.toArray(new String[0]);
+    }
+    
+    /**
+     * Войти с текущим профилем
+     * @return true если вход успешен, false в противном случае
+     */
+    public boolean login() {
+        if (currentUsername == null || currentPassword == null) {
+            Log.e(TAG, "Невозможно войти: Отсутствует имя пользователя или пароль");
+            return false;
         }
-        return new String(decompressed, charset);
+        
+        return login(currentUsername, currentPassword);
     }
-
-    // Heartbeat: периодически запрашивать main.php
-    public static void startHeartbeat(String loginKey, OkHttpClient client, ProfileCookieJar cookieJar, Context context) {
-        stopHeartbeat(loginKey);
-        Thread thread = new Thread(() -> {
-            try {
-                while (!Thread.currentThread().isInterrupted()) {
-                    Request mainRequest = new Request.Builder()
-                            .url(MAIN_URL)
-                            .header("User-Agent", getUserAgent())
-                            .header("Referer", BASE_URL)
-                            .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
-                            .header("Accept-Encoding", "gzip, deflate")
-                            .header("Accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7")
-                            .build();
-                    Response mainResponse = client.newCall(mainRequest).execute();
-                    String mainHtml = decodeResponse(mainResponse);
-                    logToFile(context, "HEARTBEAT main.php: " + mainResponse.code() + "\n" + mainHtml);
-                    mainResponse.close();
-                    Thread.sleep(3000);
-                }
-            } catch (Exception e) {
-                logToFile(context, "HEARTBEAT error: " + e.getMessage());
-            }
-        });
-        heartbeatThreads.put(loginKey, thread);
-        thread.start();
-    }
-
-    public static void stopHeartbeat(String loginKey) {
-        Thread thread = heartbeatThreads.get(loginKey);
-        if (thread != null) {
-            thread.interrupt();
-            heartbeatThreads.remove(loginKey);
-        }
-    }
-
-    private static void postToMain(AuthCallback callback, boolean success, Object result) {
-        new Handler(Looper.getMainLooper()).post(() -> {
+    
+    /**
+     * Войти с определенными учетными данными
+     * @param username Имя пользователя
+     * @param password Пароль
+     * @return true если вход успешен, false в противном случае
+     */
+    public boolean login(String username, String password) {
+        try {
+            // Использовать NeverApi для выполнения фактического входа
+            boolean success = neverApi.login(username, password);
+            
             if (success) {
-                callback.onSuccess((List<Cookie>) result);
+                isAuthenticated = true;
+                Log.d(TAG, "Вход успешен для пользователя: " + username);
+                
+                // Если это новый вход (не из текущего профиля), обновить текущий профиль
+                if (!username.equals(currentUsername)) {
+                    currentUsername = username;
+                    currentPassword = password;
+                    // Не изменять currentProfileName или currentSavePassword
+                }
             } else {
-                callback.onFailure((String) result);
+                isAuthenticated = false;
+                Log.e(TAG, "Вход не удался для пользователя: " + username);
             }
-        });
-    }
-
-    private static String encode(String value) {
-        try {
-            return URLEncoder.encode(value, "windows-1251");
+            
+            return success;
         } catch (Exception e) {
-            return value;
+            isAuthenticated = false;
+            Log.e(TAG, "Ошибка входа", e);
+            return false;
         }
     }
-
-    private static String getUserAgent() {
-        return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36";
-    }
-
-    private static void logToFile(Context context, String text) {
+    
+    /**
+     * Выйти текущего пользователя
+     * @return true если выход успешен, false в противном случае
+     */
+    public boolean logout() {
         try {
-            File logFile = new File(context.getFilesDir(), "log.txt");
-            try (FileWriter writer = new FileWriter(logFile, true)) {
-                writer.write(text + "\n");
-            }
-        } catch (IOException e) {
-            Log.e(TAG, "Log error", e);
+            boolean success = neverApi.logout();
+            isAuthenticated = false;
+            Log.d(TAG, "Выход " + (success ? "успешен" : "не удался"));
+            return success;
+        } catch (Exception e) {
+            Log.e(TAG, "Ошибка выхода", e);
+            isAuthenticated = false;
+            return false;
         }
     }
-}
-
-// CookieJar для профиля
-class ProfileCookieJar implements CookieJar {
-    private final UserConfig profile;
-    private List<Cookie> cookies = new java.util.ArrayList<>();
-
-    public ProfileCookieJar(UserConfig profile) {
-        this.profile = profile;
+    
+    /**
+     * Проверить, аутентифицирован ли пользователь
+     * @return true если аутентифицирован, false в противном случае
+     */
+    public boolean isAuthenticated() {
+        return isAuthenticated && neverApi.isLoggedIn();
     }
-
-    @Override
-    public void saveFromResponse(HttpUrl url, List<Cookie> cookies) {
-        this.cookies = new java.util.ArrayList<>(cookies);
+    
+    /**
+     * Получить экземпляр NeverApi
+     * @return Экземпляр NeverApi
+     */
+    public NeverApi getNeverApi() {
+        return neverApi;
     }
-
-    @Override
-    public List<Cookie> loadForRequest(HttpUrl url) {
-        return cookies;
+    
+    /**
+     * Получить имя текущего профиля
+     * @return Имя текущего профиля
+     */
+    public String getCurrentProfileName() {
+        return currentProfileName;
     }
-
-    public List<Cookie> getCookies() {
-        return cookies;
+    
+    /**
+     * Получить текущее имя пользователя
+     * @return Текущее имя пользователя
+     */
+    public String getCurrentUsername() {
+        return currentUsername;
     }
-
-    public void clear() {
-        cookies.clear();
+    
+    /**
+     * Проверить, сохранен ли пароль для текущего профиля
+     * @return true если пароль сохранен, false в противном случае
+     */
+    public boolean isPasswordSaved() {
+        return currentSavePassword;
+    }
+    
+    /**
+     * Установить, сохранять ли пароль для текущего профиля
+     * @param savePassword Сохранять ли пароль
+     */
+    public void setSavePassword(boolean savePassword) {
+        currentSavePassword = savePassword;
+        saveCurrentProfile();
     }
 }
