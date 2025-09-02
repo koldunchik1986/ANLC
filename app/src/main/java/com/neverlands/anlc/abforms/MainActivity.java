@@ -27,15 +27,15 @@ public class MainActivity extends AppCompatActivity implements IdleManager.IdleS
     private static final String TAG = "MainActivity";
     
     // Компоненты UI
-    private TextView tvCharacterName;
-    private TextView tvCharacterLevel;
-    private TextView tvCharacterHealth;
-    private TextView tvCharacterMana;
-    private TextView tvLocation;
-    private Button btnRefresh;
-    private Button btnInventory;
-    private Button btnMap;
-    private Button btnChat;
+        // private TextView tvCharacterName;
+        // private TextView tvCharacterLevel;
+        // private TextView tvCharacterHealth;
+        // private TextView tvCharacterMana;
+        // private TextView tvLocation;
+        // private Button btnRefresh;
+        // private Button btnInventory;
+        // private Button btnMap;
+        // private Button btnChat;
     
     // Игровые компоненты
     private NeverApi neverApi;
@@ -52,15 +52,15 @@ public class MainActivity extends AppCompatActivity implements IdleManager.IdleS
         setContentView(R.layout.activity_main);
         
         // Инициализировать компоненты UI
-        tvCharacterName = findViewById(R.id.tvCharacterName);
-        tvCharacterLevel = findViewById(R.id.tvCharacterLevel);
-        tvCharacterHealth = findViewById(R.id.tvCharacterHealth);
-        tvCharacterMana = findViewById(R.id.tvCharacterMana);
-        tvLocation = findViewById(R.id.tvLocation);
-        btnRefresh = findViewById(R.id.btnRefresh);
-        btnInventory = findViewById(R.id.btnInventory);
-        btnMap = findViewById(R.id.btnMap);
-        btnChat = findViewById(R.id.btnChat);
+            // tvCharacterName = findViewById(R.id.tvCharacterName);
+            // tvCharacterLevel = findViewById(R.id.tvCharacterLevel);
+            // tvCharacterHealth = findViewById(R.id.tvCharacterHealth);
+            // tvCharacterMana = findViewById(R.id.tvCharacterMana);
+            // tvLocation = findViewById(R.id.tvLocation);
+            // btnRefresh = findViewById(R.id.btnRefresh);
+            // btnInventory = findViewById(R.id.btnInventory);
+            // btnMap = findViewById(R.id.btnMap);
+            // btnChat = findViewById(R.id.btnChat);
         
         // Настроить слушатели кликов
         btnRefresh.setOnClickListener(v -> refreshGameData());
@@ -196,17 +196,15 @@ public class MainActivity extends AppCompatActivity implements IdleManager.IdleS
      */
     private void updateUI() {
         // Обновить информацию о персонаже
-        tvCharacterName.setText(AppVars.getCharacterName());
-        tvCharacterLevel.setText(getString(R.string.level_format, AppVars.getCharacterLevel()));
-        tvCharacterHealth.setText(getString(R.string.health_format, 
-                                          AppVars.getCharacterHealth(), 
-                                          AppVars.getCharacterMaxHealth()));
-        tvCharacterMana.setText(getString(R.string.mana_format, 
-                                        AppVars.getCharacterMana(), 
-                                        AppVars.getCharacterMaxMana()));
-        
-        // Обновить информацию о локации
-        tvLocation.setText(AppVars.getCurrentLocation());
+            // tvCharacterName.setText(AppVars.getCharacterName());
+            // tvCharacterLevel.setText(getString(R.string.level_format, AppVars.getCharacterLevel()));
+            // tvCharacterHealth.setText(getString(R.string.health_format, 
+            //                                   AppVars.getCharacterHealth(), 
+            //                                   AppVars.getCharacterMaxHealth()));
+            // tvCharacterMana.setText(getString(R.string.mana_format, 
+            //                                 AppVars.getCharacterMana(), 
+            //                                 AppVars.getCharacterMaxMana()));
+            // tvLocation.setText(AppVars.getCurrentLocation());
     }
     
     /**
@@ -216,6 +214,8 @@ public class MainActivity extends AppCompatActivity implements IdleManager.IdleS
     private void setRefreshingState(boolean isRefreshing) {
         btnRefresh.setEnabled(!isRefreshing);
         btnRefresh.setText(isRefreshing ? R.string.refreshing : R.string.refresh);
+            // btnRefresh.setEnabled(!isRefreshing);
+            // btnRefresh.setText(isRefreshing ? R.string.refreshing : R.string.refresh);
     }
     
     /**
