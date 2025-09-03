@@ -1,4 +1,4 @@
-package com.neverlands.anlc;
+package com.neverlands.anlc.abforms;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -11,6 +11,14 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.neverlands.anlc.NeverApi;
+import com.neverlands.anlc.IdleManager;
+import com.neverlands.anlc.AppVars;
+import com.neverlands.anlc.R;
+import com.neverlands.anlc.services.FavoritesManager;
+
+import java.util.List;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
@@ -48,8 +56,10 @@ public class MainActivity extends AppCompatActivity implements IdleManager.IdleS
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+    // Инициализация глобальных переменных
+    com.neverlands.anlc.AppVars.initialize(getApplicationContext());
         
         // Инициализировать компоненты UI
             // tvCharacterName = findViewById(R.id.tvCharacterName);
@@ -82,6 +92,12 @@ public class MainActivity extends AppCompatActivity implements IdleManager.IdleS
         
         // Начальное обновление данных
         refreshGameData();
+
+        // Загрузка избранного
+        List<com.neverlands.anlc.model.Bookmark> bookmarks = FavoritesManager.INSTANCE.loadFavorites(this);
+        for (com.neverlands.anlc.model.Bookmark bookmark : bookmarks) {
+            Log.d(TAG, "Bookmark: " + bookmark.getTitle() + " -> " + bookmark.getUrl());
+        }
     }
     
     @Override

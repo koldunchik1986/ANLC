@@ -74,31 +74,31 @@ public class HttpClient {
     public String get(String urlString, Map<String, String> headers) throws IOException {
         URL url = new URL(urlString);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        
+
         try {
             connection.setRequestMethod("GET");
-            
+
             // Добавить заголовки по умолчанию
             for (Map.Entry<String, String> header : defaultHeaders.entrySet()) {
                 connection.setRequestProperty(header.getKey(), header.getValue());
             }
-            
+
             // Добавить пользовательские заголовки, если они предоставлены
             if (headers != null) {
                 for (Map.Entry<String, String> header : headers.entrySet()) {
                     connection.setRequestProperty(header.getKey(), header.getValue());
                 }
             }
-            
+
             // Получить ответ
             int responseCode = connection.getResponseCode();
             Log.d(TAG, "GET код ответа: " + responseCode + " для URL: " + urlString);
-            
+
             if (responseCode == HttpURLConnection.HTTP_OK) {
-                return readResponse(connection);
+                return readResponseWin1251(connection);
             } else {
                 Log.e(TAG, "GET запрос не удался с кодом ответа: " + responseCode);
-                return readErrorResponse(connection);
+                return readErrorResponseWin1251(connection);
             }
         } finally {
             connection.disconnect();
@@ -127,26 +127,26 @@ public class HttpClient {
     public String post(String urlString, Map<String, String> formData, Map<String, String> headers) throws IOException {
         URL url = new URL(urlString);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        
+
         try {
             connection.setRequestMethod("POST");
             connection.setDoOutput(true);
-            
+
             // Добавить заголовки по умолчанию
             for (Map.Entry<String, String> header : defaultHeaders.entrySet()) {
                 connection.setRequestProperty(header.getKey(), header.getValue());
             }
-            
+
             // Добавить заголовок типа содержимого для данных формы
-            connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-            
+            connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=windows-1251");
+
             // Добавить пользовательские заголовки, если они предоставлены
             if (headers != null) {
                 for (Map.Entry<String, String> header : headers.entrySet()) {
                     connection.setRequestProperty(header.getKey(), header.getValue());
                 }
             }
-            
+
             // Построить строку данных формы
             StringBuilder formDataBuilder = new StringBuilder();
             if (formData != null) {
@@ -157,22 +157,22 @@ public class HttpClient {
                     formDataBuilder.append(entry.getKey()).append("=").append(entry.getValue());
                 }
             }
-            
+
             // Записать данные формы в соединение
             try (OutputStream os = connection.getOutputStream()) {
-                byte[] input = formDataBuilder.toString().getBytes(StandardCharsets.UTF_8);
+                byte[] input = formDataBuilder.toString().getBytes("windows-1251");
                 os.write(input, 0, input.length);
             }
-            
+
             // Получить ответ
             int responseCode = connection.getResponseCode();
             Log.d(TAG, "POST код ответа: " + responseCode + " для URL: " + urlString);
-            
+
             if (responseCode == HttpURLConnection.HTTP_OK) {
-                return readResponse(connection);
+                return readResponseWin1251(connection);
             } else {
                 Log.e(TAG, "POST запрос не удался с кодом ответа: " + responseCode);
-                return readErrorResponse(connection);
+                return readErrorResponseWin1251(connection);
             }
         } finally {
             connection.disconnect();
@@ -185,9 +185,9 @@ public class HttpClient {
      * @return Тело ответа в виде строки
      * @throws IOException Если чтение не удалось
      */
-    private String readResponse(HttpURLConnection connection) throws IOException {
+    private String readResponseWin1251(HttpURLConnection connection) throws IOException {
         try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
+                new InputStreamReader(connection.getInputStream(), "windows-1251"))) {
             StringBuilder response = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {
@@ -203,9 +203,9 @@ public class HttpClient {
      * @return Тело ответа об ошибке в виде строки
      * @throws IOException Если чтение не удалось
      */
-    private String readErrorResponse(HttpURLConnection connection) throws IOException {
+    private String readErrorResponseWin1251(HttpURLConnection connection) throws IOException {
         try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(connection.getErrorStream(), StandardCharsets.UTF_8))) {
+                new InputStreamReader(connection.getErrorStream(), "windows-1251"))) {
             StringBuilder response = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {

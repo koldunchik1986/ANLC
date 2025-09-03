@@ -78,24 +78,29 @@ public class Session implements Runnable {
             boolean useExternalProxy = AppVars.Profile != null && AppVars.Profile.isDoHttpLog();
 
             // Создание соединения с сервером
-            HttpURLConnection connection;
+            HttpURLConnection connection = null;
             if (useExternalProxy && AppVars.LocalProxy != null) {
-            // connection = (HttpURLConnection) url.openConnection(AppVars.LocalProxy);
+                // connection = (HttpURLConnection) url.openConnection(AppVars.LocalProxy);
             } else {
                 connection = (HttpURLConnection) url.openConnection();
             }
 
-            // Настройка соединения
-            connection.setConnectTimeout(CONNECT_TIMEOUT);
-            connection.setReadTimeout(READ_TIMEOUT);
-            connection.setRequestMethod(requestHeaders.getMethod());
-            connection.setInstanceFollowRedirects(false);
+            if (connection != null) {
+                // Настройка соединения
+                connection.setConnectTimeout(CONNECT_TIMEOUT);
+                connection.setReadTimeout(READ_TIMEOUT);
+                connection.setRequestMethod(requestHeaders.getMethod());
+                connection.setInstanceFollowRedirects(false);
 
-            // Установка заголовков запроса
-            for (HttpHeaderItem header : requestHeaders.getHeaders()) {
-                if (!header.getName().equalsIgnoreCase("Proxy-Connection")) {
-                    connection.setRequestProperty(header.getName(), header.getValue());
+                // Установка заголовков запроса
+                for (HttpHeaderItem header : requestHeaders.getHeaders()) {
+                    if (!header.getName().equalsIgnoreCase("Proxy-Connection")) {
+                        connection.setRequestProperty(header.getName(), header.getValue());
+                    }
                 }
+            } else {
+                Log.e(TAG, "Не удалось создать соединение с сервером");
+                return;
             }
 
             // Добавление cookies, если необходимо

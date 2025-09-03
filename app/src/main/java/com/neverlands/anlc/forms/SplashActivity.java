@@ -67,9 +67,7 @@ public class SplashActivity extends AppCompatActivity {
             updateStatus("Инициализация cookies...");
             CookiesManager.initialize();
 
-            // Загружаем профили пользователей
-            updateStatus("Загрузка профилей...");
-            ConfigSelector.loadProfiles();
+            
 
             // Загружаем карту
             updateStatus("Загрузка карты...");
@@ -124,8 +122,8 @@ public class SplashActivity extends AppCompatActivity {
      */
     private void startMainActivity() {
         new Handler(Looper.getMainLooper()).post(() -> {
-            // Intent intent = new Intent(SplashActivity.this, MainActivity.class);
-            // startActivity(intent);
+            Intent intent = new Intent(SplashActivity.this, com.neverlands.anlc.forms.ProfilesActivity.class);
+            startActivity(intent);
             finish();
         });
     }

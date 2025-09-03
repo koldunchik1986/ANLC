@@ -226,7 +226,7 @@ public class UserConfig implements Serializable, Comparable<UserConfig> {
         try {
             File dir = new File(com.neverlands.anlc.ANLCApplication.getAppContext().getFilesDir(), "profiles");
             if (!dir.exists()) dir.mkdirs();
-            File file = new File(dir, UserNick + ".anlc");
+            File file = new File(dir, UserNick + com.neverlands.anlc.AppConsts.PROFILE_EXTENSION);
             try (FileOutputStream fos = new FileOutputStream(file)) {
                 props.store(fos, "User Config");
             }

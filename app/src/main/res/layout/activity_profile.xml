@@ -71,8 +71,13 @@
             android:id="@+id/autoLoginCheckBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Автоматический вход"
-            android:layout_marginBottom="16dp" />
+            android:text="Автоматический вход" />
+
+        <CheckBox
+            android:id="@+id/autoClearCookiesCheckBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Автоматическая очистка cookies" />
 
         <View
             android:layout_width="match_parent"
