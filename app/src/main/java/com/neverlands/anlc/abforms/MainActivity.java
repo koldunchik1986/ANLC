@@ -96,7 +96,7 @@ public class MainActivity extends AppCompatActivity implements IdleManager.IdleS
         // Загрузка избранного
         List<com.neverlands.anlc.model.Bookmark> bookmarks = FavoritesManager.INSTANCE.loadFavorites(this);
         for (com.neverlands.anlc.model.Bookmark bookmark : bookmarks) {
-            Log.d(TAG, "Bookmark: " + bookmark.getTitle() + " -> " + bookmark.getUrl());
+            Log.d(TAG, "Bookmark: " + bookmark.title + " -> " + bookmark.url);
         }
     }
     

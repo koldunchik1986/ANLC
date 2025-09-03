@@ -16,11 +16,7 @@ android {
         versionName "1.0.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
-    sourceSets {
-        main {
-            java.srcDirs = ['src/main/java']
-        }
-    }
+    
 
     signingConfigs {
         release {
@@ -45,6 +41,11 @@ android {
     
     buildFeatures {
         viewBinding true
+    }
+
+    sourceSets {
+        main.java.srcDirs += 'src/main/java'
+        main.java.excludes = ['**/*.kt']
     }
     
         configurations.all {
