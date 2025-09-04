@@ -5,7 +5,7 @@
     android:id="@+id/drawerLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".abforms.MainActivity">
+    tools:context=".ui.main.MainActivity">
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
@@ -42,149 +42,18 @@
                     android:orientation="horizontal"
                     android:padding="4dp">
 
+                    <!-- Добавляем кнопку выхода -->
                     <Button
-                        android:id="@+id/buttonAutoboi"
+                        android:id="@+id/logoutButton"
                         style="?android:attr/buttonBarButtonStyle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Автобой выкл"
+                        android:text="Выход"
                         android:textSize="12sp" />
 
-                    <Button
-                        android:id="@+id/buttonNavigator"
-                        style="?android:attr/buttonBarButtonStyle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Навигатор"
-                        android:textSize="12sp" />
+                    <!-- Остальные кнопки, если нужны -->
+                    <!-- ... -->
 
-                    <CheckBox
-                        android:id="@+id/buttonDrink"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Автопитье"
-                        android:textSize="12sp" />
-
-
-                    <CheckBox
-                        android:id="@+id/buttonAutoAnswer"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Автоответ"
-                        android:textSize="12sp" />
-
-                    <CheckBox
-                        android:id="@+id/buttonAutoFish"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Авторыбалка"
-                        android:textSize="12sp" />
-
-                    <CheckBox
-                        android:id="@+id/buttonAutoSkin"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Автошкуры"
-                        android:textSize="12sp" />
-
-
-                    <CheckBox
-                        android:id="@+id/buttonAutoRefresh"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Автообновл"
-                        android:textSize="12sp" />
-
-                    <CheckBox
-                        android:id="@+id/buttonWaitOpen"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Ждать откр"
-                        android:textSize="12sp" />
-
-                    <CheckBox
-                        android:id="@+id/buttonOpenNevid"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Откр невид"
-                        android:textSize="12sp" />
-
-                    <CheckBox
-                        android:id="@+id/buttonSelfNevid"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Свой невид"
-                        android:textSize="12sp" />
-
-                    <CheckBox
-                        android:id="@+id/buttonPerenap"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Перенапад"
-                        android:textSize="12sp" />
-
-                    <CheckBox
-                        android:id="@+id/checkAutoRefresh"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Автообновл"
-                        android:textSize="12sp" />
-
-                    <CheckBox
-                        android:id="@+id/checkWaitOpen"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Ждать откр"
-                        android:textSize="12sp" />
-
-                    <CheckBox
-                        android:id="@+id/checkOpenNevid"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Откр невид"
-                        android:textSize="12sp" />
-
-                    <CheckBox
-                        android:id="@+id/checkSelfNevid"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Свой невид"
-                        android:textSize="12sp" />
-
-                    <CheckBox
-                        android:id="@+id/checkPerenap"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Перенапад"
-                        android:textSize="12sp" />
-
-                    <CheckBox
-                        android:id="@+id/buttonWalkers"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Ходоки"
-                        android:textSize="12sp" />
-
-                    <CheckBox
-                        android:id="@+id/buttonFury"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Ярость"
-                        android:textSize="12sp" />
-
-                    <CheckBox
-                        android:id="@+id/buttonDoTexLog"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Лог"
-                        android:textSize="12sp" />
-
-                    <CheckBox
-                        android:id="@+id/buttonShowPerformance"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Производительность"
-                        android:textSize="12sp" />
                 </LinearLayout>
             </HorizontalScrollView>
 
@@ -294,8 +163,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="8dp"
                     android:enabled="false"
-                    android:text="Реклама"
-                    android:textSize="12sp" />
+                    android:text="Реклама"                    android:textSize="12sp" />
 
                 <TextView
                     android:id="@+id/statuslabelTorgAdv"

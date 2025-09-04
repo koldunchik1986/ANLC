@@ -126,4 +126,13 @@
             app:showAsAction="never" />
     </group>
 
+    <!-- Группа "Отладка" -->
+    <group android:id="@+id/menuGroupDebug">
+        <item
+            android:id="@+id/action_view_logs"
+            android:orderInCategory="600"
+            android:title="Просмотр логов"
+            app:showAsAction="never" />
+    </group>
+
 </menu>

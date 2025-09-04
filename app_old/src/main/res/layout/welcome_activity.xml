@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <Button
+        android:id="@+id/btn_add_profile"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Добавить профиль" />
+
+    <Button
+        android:id="@+id/btn_export_profiles"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Экспорт профилей" />
+
+    <Button
+        android:id="@+id/btn_import_profiles"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Импорт профилей" />
+
+    <Button
+        android:id="@+id/btn_view_log"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Показать лог" />
+
+    <Button
+        android:id="@+id/btn_settings"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Настройки" />
+
+    <ListView
+        android:id="@+id/list_profiles"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:choiceMode="singleChoice" />
+
+    <Button
+        android:id="@+id/btn_login"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Вход в игру" />
+
+</LinearLayout>
