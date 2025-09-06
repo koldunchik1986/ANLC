@@ -4,21 +4,20 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.ArrayAdapter
 import androidx.activity.viewModels
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import com.neverlands.anlc.R
 import com.neverlands.anlc.data.local.ProfileManager
 import com.neverlands.anlc.data.local.model.Profile
 import com.neverlands.anlc.data.remote.AuthResult
-import com.neverlands.anlc.databinding.ActivityProfilesBinding // Assuming ViewBinding will be used
+import com.neverlands.anlc.databinding.ActivityProfilesBinding
+import com.neverlands.anlc.forms.LogListActivity
 import com.neverlands.anlc.ui.base.BaseActivity
-import com.neverlands.anlc.ui.main.MainActivity // Assuming MainActivity will be in ui.main
+import com.neverlands.anlc.ui.main.MainActivity
 
-/**
- * Activity для выбора профиля и входа в игру.
- * Является основным экраном для взаимодействия с профилями пользователей.
- */
 class ProfilesActivity : BaseActivity() {
 
-    private val viewModel: ProfileViewModel by viewModels()
+    private val viewModel: ProfileViewModel by viewModels { ProfileViewModelFactory(application) }
     private lateinit var binding: ActivityProfilesBinding
     private var selectedProfile: Profile? = null
 
@@ -35,18 +34,9 @@ class ProfilesActivity : BaseActivity() {
     private fun setupViews() {
         binding.loginButton.setOnClickListener {
             selectedProfile?.let { profile ->
-                if (profile.configPasswordHash.isNullOrEmpty()) {
-                    // Если пароль конфигурации не установлен, запрашиваем его
-                    PasswordInputDialog { enteredPassword ->
-                        viewModel.authorize(profile, enteredPassword)
-                    }.show(supportFragmentManager, "password_dialog")
-                } else {
-                    // Если пароль конфигурации есть, используем его для авторизации
-                    // TODO: В будущем здесь нужно будет запросить пароль от пользователя,
-                    // если он не хочет использовать автологин или если пароль не совпадает с хешем
-                    val password = "your_password_here" // Временно используем заглушку для теста
+                PasswordInputDialog { password ->
                     viewModel.authorize(profile, password)
-                }
+                }.show(supportFragmentManager, "password_dialog")
             } ?: showToast("Пожалуйста, выберите профиль")
         }
 
@@ -69,8 +59,13 @@ class ProfilesActivity : BaseActivity() {
             selectedProfile?.let { profile ->
                 viewModel.removeProfile(profile)
                 showToast("Профиль ${profile.userNick} удален.")
-                selectedProfile = null // Сбрасываем выбранный профиль
+                selectedProfile = null
             } ?: showToast("Пожалуйста, выберите профиль для удаления")
+        }
+
+        binding.logsButton.setOnClickListener {
+            val intent = Intent(this, LogListActivity::class.java)
+            startActivity(intent)
         }
     }
 
@@ -90,16 +85,28 @@ class ProfilesActivity : BaseActivity() {
 
         viewModel.authResult.observe(this) { result ->
             when (result) {
-                AuthResult.Success -> {
-                    showToast("Авторизация успешна!")
-                    selectedProfile?.let { ProfileManager.setCurrentProfile(it) } // Устанавливаем текущий профиль
-                    val intent = Intent(this, MainActivity::class.java)
-                    startActivity(intent)
-                    finish()
+                is AuthResult.Success -> {
+                    selectedProfile?.let { profile ->
+                        ProfileManager.setCurrentProfile(profile)
+                        val intent = Intent(this, MainActivity::class.java).apply {
+                            putExtra("html_content", result.htmlContent)
+                        }
+                        startActivity(intent)
+                        finish()
+                    }
                 }
-                is AuthResult.Failure -> showToast("Ошибка авторизации: ${result.error}")
-                AuthResult.CaptchaRequired -> showToast("Требуется капча!")
+                is AuthResult.Failure -> showToast("Ошибка: ${result.error}")
             }
         }
+    }
+}
+
+class ProfileViewModelFactory(private val application: android.app.Application) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(ProfileViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return ProfileViewModel(application) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

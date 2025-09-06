@@ -5,6 +5,7 @@ import androidx.activity.viewModels
 import com.neverlands.anlc.data.local.model.Profile
 import com.neverlands.anlc.databinding.ActivityProfileEditBinding
 import com.neverlands.anlc.ui.base.BaseActivity
+import com.neverlands.anlc.util.parcelable
 
 /**
  * Activity для создания и редактирования профилей.
@@ -23,7 +24,7 @@ class ProfileEditActivity : BaseActivity() {
 
         isNewProfile = intent.getBooleanExtra("is_new_profile", true)
         if (!isNewProfile) {
-            originalProfile = intent.getParcelableExtra("profile_to_edit") // Profile needs to be Parcelable
+            originalProfile = intent.parcelable("profile_to_edit") // Profile needs to be Parcelable
             originalProfile?.let { profile ->
                 // Заполняем поля для редактирования
                 binding.editTextNick.setText(profile.userNick)

@@ -1,5 +1,7 @@
 package com.neverlands.anlc.data.remote
 
+import android.content.Context
+import android.webkit.CookieManager
 import com.neverlands.anlc.data.local.model.Profile
 import com.neverlands.anlc.data.remote.api.ApiClient
 import com.neverlands.anlc.util.CryptoHelper
@@ -10,6 +12,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.Cookie
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -18,81 +21,89 @@ import java.util.Locale
 typealias AuthCallback = (result: AuthResult) -> Unit
 
 sealed class AuthResult {
-    object Success : AuthResult()
+    data class Success(val htmlContent: String) : AuthResult()
     data class Failure(val error: String) : AuthResult()
-    object CaptchaRequired : AuthResult()
 }
 
-/**
- * Репозиторий для управления авторизацией и сессией.
- * Является единой точкой для всей логики, связанной с аутентификацией.
- */
 object AuthRepository {
 
     private val apiClient: ApiClient = ApiClientFactory.apiClient
-    private val authInterceptor = ApiClientFactory.authInterceptor
-    private val cookieJar = ApiClientFactory.cookieJar
+    private val cookieJar = ApiClientFactory.cookieJar as WebViewCookieJar
 
     private var heartbeatJob: Job? = null
 
-    /**
-     * Выполняет полный цикл авторизации.
-     * @param profile Профиль пользователя.
-     * @param password Пароль для расшифровки данных профиля.
-     * @param callback Callback для уведомления о результате.
-     */
     fun authorize(
+        context: Context,
         profile: Profile,
         password: String,
         callback: AuthCallback
     ) {
+        FileLogger.log(context, "AuthRepository.authorize called for ${profile.userNick}")
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // 1. Расшифровываем пароли
-                val gamePassword = CryptoHelper.decryptString(profile.encryptedPassword, password)
-                val flashPassword = CryptoHelper.decryptString(profile.encryptedPasswordFlash, password)
+                FileLogger.log(context, "Начало авторизации для ${profile.userNick}")
 
-                // 2. Очищаем старые куки, если нужно
+                val gamePassword = CryptoHelper.decryptString(profile.encryptedPassword, password)
+                if (gamePassword.isEmpty() && profile.encryptedPassword.isNotEmpty()) {
+                    FileLogger.log(context, "Ошибка: Неверный пароль конфигурации.")
+                    withContext(Dispatchers.Main) { callback(AuthResult.Failure("Неверный пароль конфигурации")) }
+                    return@launch
+                }
+
                 if (profile.autoClearCookies) {
                     cookieJar.clearCookies("neverlands.ru")
+                    FileLogger.log(context, "Старые куки для neverlands.ru очищены.")
                 }
 
-                // 3. Получаем начальные куки
-                apiClient.getInitialPage()
+                // Step 1: GET / to get initial cookies
+                FileLogger.log(context, "GET /")
+                val initialResponse = apiClient.getInitialPage()
+                if (!initialResponse.isSuccessful) {
+                    FileLogger.log(context, "Ошибка получения стартовой страницы: ${initialResponse.code()}")
+                    withContext(Dispatchers.Main) { callback(AuthResult.Failure("Ошибка получения стартовой страницы: ${initialResponse.code()}")) }
+                    return@launch
+                }
+                FileLogger.log(context, "GET / - Успех. Код: ${initialResponse.code()}")
 
-                // 4. Отправляем логин и пароль
+                // Step 2: POST /game.php with credentials
+                FileLogger.log(context, "POST /game.php")
                 val loginResponse = apiClient.login(profile.userNick, gamePassword)
                 if (!loginResponse.isSuccessful) {
-                    withContext(Dispatchers.Main) { callback(AuthResult.Failure("Login request failed")) }
+                    FileLogger.log(context, "Ошибка входа: ${loginResponse.code()}")
+                    withContext(Dispatchers.Main) { callback(AuthResult.Failure("Ошибка входа: ${loginResponse.code()}")) }
+                    return@launch
+                }
+                FileLogger.log(context, "POST /game.php - Успех. Код: ${loginResponse.code()}")
+
+                // Step 3: GET /main.php to get the game page
+                FileLogger.log(context, "GET /main.php")
+                val mainPageResponse = apiClient.getMainPage()
+                if (!mainPageResponse.isSuccessful) {
+                    FileLogger.log(context, "Ошибка получения главной страницы: ${mainPageResponse.code()}")
+                    withContext(Dispatchers.Main) { callback(AuthResult.Failure("Ошибка получения главной страницы: ${mainPageResponse.code()}")) }
+                    return@launch
+                }
+                val mainPageBody = mainPageResponse.body() ?: ""
+                FileLogger.log(context, "GET /main.php - Успех. Код: ${mainPageResponse.code()}")
+
+                // Step 4: Check for login errors
+                if (mainPageBody.contains("auth_form") || mainPageBody.contains("неверный пароль")) {
+                    FileLogger.log(context, "Ошибка: Неверный логин или пароль.")
+                    withContext(Dispatchers.Main) { callback(AuthResult.Failure("Неверный логин или пароль.")) }
                     return@launch
                 }
 
-                // 5. Проверяем ответ на наличие ошибок (неверный пароль, капча)
-                val loginBody = loginResponse.body()?.string() ?: ""
-                if (loginBody.contains("parent.location='/game.php'") || loginBody.contains("location='/game.php'")) {
-                    withContext(Dispatchers.Main) { callback(AuthResult.Failure("Неверный логин или пароль")) }
-                    return@launch
-                } else if (loginBody.contains("aboi.png")) {
-                    withContext(Dispatchers.Main) { callback(AuthResult.CaptchaRequired) }
-                    return@launch
-                }
-
-                // 6. Если все успешно, устанавливаем флеш-пароль в перехватчик
-                authInterceptor.setPassword(flashPassword)
-
-                // 7. Уведомляем об успехе
-                withContext(Dispatchers.Main) { callback(AuthResult.Success) }
+                FileLogger.log(context, "Авторизация успешна, вызов callback.")
+                withContext(Dispatchers.Main) { callback(AuthResult.Success(mainPageBody)) }
 
             } catch (e: Exception) {
+                val errorMsg = "Критическая ошибка авторизации: ${e.javaClass.simpleName}: ${e.message}"
+                FileLogger.log(context, errorMsg)
                 withContext(Dispatchers.Main) { callback(AuthResult.Failure(e.message ?: "Unknown error")) }
             }
         }
     }
 
-    /**
-     * Запускает "пульс" для поддержания сессии.
-     * @param onHeartbeat Callback, который вызывается при каждом успешном "пульсе" и передает текущее время.
-     */
     fun startSessionHeartbeat(onHeartbeat: (time: String) -> Unit) {
         stopSessionHeartbeat()
         heartbeatJob = CoroutineScope(Dispatchers.IO).launch {
@@ -104,40 +115,23 @@ object AuthRepository {
                         withContext(Dispatchers.Main) {
                             onHeartbeat(currentTime)
                         }
-                    } else {
-                        // Можно добавить логику обработки неудачного "пульса"
                     }
                 } catch (e: IOException) {
-                    // Можно добавить логику обработки ошибки сети
+                    // Handle network error
                 }
-                delay(3000)
+                delay(30000) // 30 seconds
             }
         }
     }
 
-    /**
-     * Останавливает "пульс" сессии.
-     */
     fun stopSessionHeartbeat() {
         heartbeatJob?.cancel()
         heartbeatJob = null
     }
 
-    /**
-     * Проверяет, авторизован ли пользователь.
-     * @return true, если сессионная кука существует.
-     */
-    fun isLoggedIn(): Boolean {
-        val cookies = cookieJar.getCookies("neverlands.ru")
-        return cookies.any { it.name == "PHPSESSID" }
-    }
-
-    /**
-     * Выход из системы.
-     */
     fun logout() {
-        cookieJar.clearCookies("neverlands.ru")
-        authInterceptor.setPassword(null)
         stopSessionHeartbeat()
+        CookieManager.getInstance().removeAllCookies(null)
+        CookieManager.getInstance().flush()
     }
 }

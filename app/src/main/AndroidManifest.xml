@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    >
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -35,7 +34,10 @@
             android:launchMode="singleTask"
             android:exported="false" />
 
-        <!-- Existing Log Activities -->
+        <activity
+            android:name=".ui.login.ProfileEditActivity"
+            android:exported="false" />
+
         <activity
             android:name=".forms.LogListActivity"
             android:label="Логи авторизации"
@@ -46,7 +48,15 @@
             android:label="Просмотр лога"
             android:exported="false" />
 
-        <!-- TODO: Add other activities as they are ported -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_provider_paths" />
+        </provider>
 
     </application>
 

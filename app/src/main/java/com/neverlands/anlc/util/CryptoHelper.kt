@@ -62,6 +62,28 @@ object CryptoHelper {
     }
 
     /**
+     * Шифрует данные для запроса авторизации клиента.
+     */
+    fun encryptAsk(askCode: String): String {
+        val key = "p@ssw0rdDR0wSS@P6660juht".toByteArray(Charsets.US_ASCII)
+        val iv = "p@ssw0rd".toByteArray(Charsets.US_ASCII)
+        val data = askCode.toByteArray(CODEPAGE)
+
+        val cipher = Cipher.getInstance("DESede/CBC/NoPadding")
+        val keySpec = SecretKeySpec(key, "DESede")
+        val ivSpec = IvParameterSpec(iv)
+        cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec)
+
+        // Manual zero padding
+        val blockSize = 8
+        val padding = blockSize - (data.size % blockSize)
+        val paddedData = data + ByteArray(padding)
+
+        val encrypted = cipher.doFinal(paddedData)
+        return Base64.getEncoder().encodeToString(encrypted)
+    }
+
+    /**
      * Шифрует массив байт.
      * @param data Данные для шифрования.
      * @param password Пароль.

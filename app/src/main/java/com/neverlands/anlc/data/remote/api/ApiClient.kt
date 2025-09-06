@@ -1,6 +1,5 @@
 package com.neverlands.anlc.data.remote.api
 
-import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
@@ -16,20 +15,18 @@ interface ApiClient {
      * Получает главную страницу для инициализации сессии и получения кук.
      */
     @GET("/")
-    suspend fun getInitialPage(): Response<ResponseBody>
+    suspend fun getInitialPage(): Response<String>
 
     /**
      * Отправляет данные для входа.
-     * @param login Имя пользователя.
-     * @param pass Пароль.
      */
     @FormUrlEncoded
     @POST("/game.php")
-    suspend fun login(@Field("login") login: String, @Field("pass") pass: String): Response<ResponseBody>
+    suspend fun login(@Field("player_nick") login: String, @Field("player_password") pass: String): Response<String>
 
     /**
      * Загружает главную страницу игры для проверки авторизации или для "пульса" сессии.
      */
     @GET("/main.php")
-    suspend fun getMainPage(): Response<ResponseBody>
+    suspend fun getMainPage(): Response<String>
 }

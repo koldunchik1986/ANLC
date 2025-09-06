@@ -1,133 +1,119 @@
 package com.neverlands.anlc.ui.main
 
+import android.webkit.CookieManager
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.TextView
+import android.os.Bundle
+import android.content.Intent
+import android.net.Uri
+import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
+import android.widget.TabHost
 import androidx.activity.viewModels
-import androidx.lifecycle.lifecycleScope // Import lifecycleScope
+import androidx.lifecycle.lifecycleScope
 import com.neverlands.anlc.R
 import com.neverlands.anlc.data.local.ProfileManager
-import com.neverlands.anlc.databinding.ActivityMainBinding // Assuming ViewBinding will be used
+import com.neverlands.anlc.databinding.ActivityMainBinding
+import com.neverlands.anlc.forms.LogListActivity
 import com.neverlands.anlc.ui.base.BaseActivity
-import com.neverlands.anlc.ui.login.ProfilesActivity // For logout navigation
-import com.neverlands.anlc.forms.LogListActivity // Import LogListActivity
-import com.neverlands.anlc.webview.WebViewRequestInterceptor // Import WebViewRequestInterceptor
-import com.neverlands.anlc.webview.JavaScriptInterface // Import JavaScriptInterface
-import kotlinx.coroutines.flow.collectLatest // Import collectLatest
+import com.neverlands.anlc.ui.login.ProfilesActivity
+import com.neverlands.anlc.webview.JavaScriptInterface
+import com.neverlands.anlc.webview.WebViewRequestInterceptor
+import com.neverlands.anlc.data.local.ChatManager
+import com.neverlands.anlc.data.local.ChatProcessor
+import com.neverlands.anlc.data.remote.FileLogger
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
-/**
- * Главный экран игры.
- * Отображает WebView с игровым контентом и управляет "пульсом" сессии.
- */
 class MainActivity : BaseActivity() {
 
     private val viewModel: MainViewModel by viewModels()
     private lateinit var binding: ActivityMainBinding
     private lateinit var browserGame: WebView
     private lateinit var statuslabelClock: TextView
-    private val webViewRequestInterceptor = WebViewRequestInterceptor() // Instantiate the interceptor
+    private val webViewRequestInterceptor = WebViewRequestInterceptor()
+    private lateinit var chatProcessor: ChatProcessor
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        val profile = ProfileManager.getCurrentProfile()
+
         setupViews()
+        setupTabs()
+        chatProcessor = ChatProcessor(viewModel)
         setupWebView()
         setupObservers()
 
-        // Запускаем "пульс" сессии, если профиль активен
-        if (ProfileManager.getCurrentProfile() != null) {
+        if (profile != null) {
+            ChatManager.init(applicationContext, profile)
             viewModel.startHeartbeat()
         } else {
-            // Если профиль не установлен (например, прямой запуск MainActivity),
-            // перенаправляем на экран выбора профиля
-            val intent = Intent(this, ProfilesActivity::class.java)
-            startActivity(intent)
-            finish()
+            goToLogin()
+            return
+        }
+
+        val htmlContent = intent.getStringExtra("html_content")
+        if (htmlContent != null) {
+            browserGame.loadDataWithBaseURL("http://neverlands.ru/", htmlContent, "text/html", "windows-1251", null)
+        } else {
+            // This should not happen in the normal flow
+            goToLogin()
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        // Возобновляем "пульс" при возвращении на экран
-        if (ProfileManager.getCurrentProfile() != null) {
-            viewModel.startHeartbeat()
-        }
-    }
-
-    override fun onPause() {
-        super.onPause()
-        // Останавливаем "пульс" при уходе с экрана
-        viewModel.stopHeartbeat()
+    private fun goToLogin() {
+        val intent = Intent(this, ProfilesActivity::class.java)
+        startActivity(intent)
+        finish()
     }
 
     private fun setupViews() {
-        statuslabelClock = findViewById(R.id.statuslabelClock) // Находим TextView для часов
-        // TODO: Настроить другие элементы UI, такие как кнопки, меню и т.д.
-        // Например, кнопка выхода
+        statuslabelClock = findViewById(R.id.statuslabelClock)
         binding.logoutButton.setOnClickListener {
             viewModel.logout()
-            val intent = Intent(this, ProfilesActivity::class.java)
-            startActivity(intent)
-            finish()
+            goToLogin()
         }
+    }
+
+    private fun setupTabs() {
+        binding.tabHost.setup()
+        var spec: TabHost.TabSpec = binding.tabHost.newTabSpec("Игра").setContent(R.id.tabGame).setIndicator("Игра")
+        binding.tabHost.addTab(spec)
+        spec = binding.tabHost.newTabSpec("Контакты").setContent(R.id.tabContacts).setIndicator("Контакты")
+        binding.tabHost.addTab(spec)
+        spec = binding.tabHost.newTabSpec("Логи").setContent(R.id.tabLogs).setIndicator("Логи")
+        binding.tabHost.addTab(spec)
+        binding.tabHost.currentTab = 0
     }
 
     private fun setupWebView() {
         browserGame = binding.browserGame
-        browserGame.settings.javaScriptEnabled = true // Включаем JavaScript
+        browserGame.settings.javaScriptEnabled = true
+        browserGame.settings.userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.7258.138 Safari/537.36"
         browserGame.webViewClient = object : WebViewClient() {
-            override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
-                if (url == null) return false
-
-                // Check for internal game links (e.g., neverlands.ru)
-                if (url.startsWith("http://neverlands.ru", true) || url.startsWith("https://neverlands.ru", true)) {
-                    // TODO: Replicate C# GameBeforeNavigate logic here if needed in the future.
-                    // The C# code had a commented-out section for "/abc-moveto:"
-                    // if (url.startsWith("http://neverlands.ru/abc-moveto:", true)) {
-                    //     // Handle internal navigation for navigator feature (currently disabled in C#)
-                    //     // For now, just prevent loading in WebView and do nothing.
-                    //     return true // Cancel navigation in WebView
-                    // }
-
-                    view?.loadUrl(url)
-                    return true // Handled by WebView
-                } else {
-                    // Open external links in a browser
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                    startActivity(intent)
-                    return true // Handled by external browser
-                }
-            }
-
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
-                Log.d("MainActivity", "WebView Document Completed: $url")
-                // TODO: If AppVars.Profile.DoTexLog is true, append to a TextView or send to a logging mechanism.
-                // For now, just a simple Log.d
+                FileLogger.log(applicationContext, "onPageFinished: $url")
             }
 
             override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
-                if (request == null) return null
-                return webViewRequestInterceptor.interceptRequest(request)
+                return if (request != null) webViewRequestInterceptor.interceptRequest(request) else null
             }
         }
-        // Add JavaScript interface
-        browserGame.addJavascriptInterface(JavaScriptInterface(browserGame), "external")
-
-        // Загружаем начальную страницу игры
-        browserGame.loadUrl("http://neverlands.ru/main.php") // Или другую стартовую страницу
+        browserGame.addJavascriptInterface(JavaScriptInterface(browserGame, viewModel, chatProcessor), "Android")
     }
 
     private fun setupObservers() {
         viewModel.currentTime.observe(this) { time ->
-            statuslabelClock.text = time // Обновляем часы
+            statuslabelClock.text = time
         }
-
-        // Observe reloadUrlEvent from ViewModel
         lifecycleScope.launch {
             viewModel.reloadUrlEvent.collectLatest { url ->
                 browserGame.loadUrl(url)
@@ -147,7 +133,6 @@ class MainActivity : BaseActivity() {
                 startActivity(intent)
                 true
             }
-            // TODO: Add other menu item handlers here
             else -> super.onOptionsItemSelected(item)
         }
     }

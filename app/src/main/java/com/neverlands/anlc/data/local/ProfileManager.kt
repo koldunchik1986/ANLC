@@ -97,4 +97,22 @@ object ProfileManager {
         profiles.remove(profile)
         saveProfiles()
     }
+
+    /**
+     * Сохраняет текущий активный профиль.
+     */
+    fun saveCurrentProfile() {
+        currentProfile?.let { profile ->
+            // Find and replace the old profile with the updated currentProfile
+            val index = profiles.indexOfFirst { it.userNick.equals(profile.userNick, ignoreCase = true) }
+            if (index != -1) {
+                profiles[index] = profile
+            } else {
+                // This case should ideally not happen if currentProfile is always from the loaded list
+                // But as a fallback, add it if not found
+                profiles.add(profile)
+            }
+            saveProfiles()
+        }
+    }
 }
