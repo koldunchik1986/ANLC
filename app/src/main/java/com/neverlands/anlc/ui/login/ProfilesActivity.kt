@@ -88,9 +88,7 @@ class ProfilesActivity : BaseActivity() {
                 is AuthResult.Success -> {
                     selectedProfile?.let { profile ->
                         ProfileManager.setCurrentProfile(profile)
-                        val intent = Intent(this, MainActivity::class.java).apply {
-                            putExtra("html_content", result.htmlContent)
-                        }
+                        val intent = Intent(this, MainActivity::class.java)
                         startActivity(intent)
                         finish()
                     }

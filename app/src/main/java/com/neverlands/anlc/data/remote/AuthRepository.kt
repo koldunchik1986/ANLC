@@ -2,6 +2,7 @@ package com.neverlands.anlc.data.remote
 
 import android.content.Context
 import android.webkit.CookieManager
+import com.neverlands.anlc.data.GameContentHolder
 import com.neverlands.anlc.data.local.model.Profile
 import com.neverlands.anlc.data.remote.api.ApiClient
 import com.neverlands.anlc.util.CryptoHelper
@@ -21,7 +22,7 @@ import java.util.Locale
 typealias AuthCallback = (result: AuthResult) -> Unit
 
 sealed class AuthResult {
-    data class Success(val htmlContent: String) : AuthResult()
+    object Success : AuthResult()
     data class Failure(val error: String) : AuthResult()
 }
 
@@ -38,14 +39,12 @@ object AuthRepository {
         password: String,
         callback: AuthCallback
     ) {
-        FileLogger.log(context, "AuthRepository.authorize called for ${profile.userNick}")
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 FileLogger.log(context, "Начало авторизации для ${profile.userNick}")
 
                 val gamePassword = CryptoHelper.decryptString(profile.encryptedPassword, password)
                 if (gamePassword.isEmpty() && profile.encryptedPassword.isNotEmpty()) {
-                    FileLogger.log(context, "Ошибка: Неверный пароль конфигурации.")
                     withContext(Dispatchers.Main) { callback(AuthResult.Failure("Неверный пароль конфигурации")) }
                     return@launch
                 }
@@ -59,7 +58,6 @@ object AuthRepository {
                 FileLogger.log(context, "GET /")
                 val initialResponse = apiClient.getInitialPage()
                 if (!initialResponse.isSuccessful) {
-                    FileLogger.log(context, "Ошибка получения стартовой страницы: ${initialResponse.code()}")
                     withContext(Dispatchers.Main) { callback(AuthResult.Failure("Ошибка получения стартовой страницы: ${initialResponse.code()}")) }
                     return@launch
                 }
@@ -69,7 +67,6 @@ object AuthRepository {
                 FileLogger.log(context, "POST /game.php")
                 val loginResponse = apiClient.login(profile.userNick, gamePassword)
                 if (!loginResponse.isSuccessful) {
-                    FileLogger.log(context, "Ошибка входа: ${loginResponse.code()}")
                     withContext(Dispatchers.Main) { callback(AuthResult.Failure("Ошибка входа: ${loginResponse.code()}")) }
                     return@launch
                 }
@@ -79,7 +76,6 @@ object AuthRepository {
                 FileLogger.log(context, "GET /main.php")
                 val mainPageResponse = apiClient.getMainPage()
                 if (!mainPageResponse.isSuccessful) {
-                    FileLogger.log(context, "Ошибка получения главной страницы: ${mainPageResponse.code()}")
                     withContext(Dispatchers.Main) { callback(AuthResult.Failure("Ошибка получения главной страницы: ${mainPageResponse.code()}")) }
                     return@launch
                 }
@@ -88,13 +84,12 @@ object AuthRepository {
 
                 // Step 4: Check for login errors
                 if (mainPageBody.contains("auth_form") || mainPageBody.contains("неверный пароль")) {
-                    FileLogger.log(context, "Ошибка: Неверный логин или пароль.")
                     withContext(Dispatchers.Main) { callback(AuthResult.Failure("Неверный логин или пароль.")) }
                     return@launch
                 }
 
-                FileLogger.log(context, "Авторизация успешна, вызов callback.")
-                withContext(Dispatchers.Main) { callback(AuthResult.Success(mainPageBody)) }
+                GameContentHolder.htmlContent = mainPageBody
+                withContext(Dispatchers.Main) { callback(AuthResult.Success) }
 
             } catch (e: Exception) {
                 val errorMsg = "Критическая ошибка авторизации: ${e.javaClass.simpleName}: ${e.message}"

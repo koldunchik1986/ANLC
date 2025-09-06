@@ -16,6 +16,7 @@ import android.widget.TabHost
 import androidx.activity.viewModels
 import androidx.lifecycle.lifecycleScope
 import com.neverlands.anlc.R
+import com.neverlands.anlc.data.GameContentHolder
 import com.neverlands.anlc.data.local.ProfileManager
 import com.neverlands.anlc.databinding.ActivityMainBinding
 import com.neverlands.anlc.forms.LogListActivity
@@ -59,11 +60,13 @@ class MainActivity : BaseActivity() {
             return
         }
 
-        val htmlContent = intent.getStringExtra("html_content")
+        val htmlContent = GameContentHolder.htmlContent
         if (htmlContent != null) {
             browserGame.loadDataWithBaseURL("http://neverlands.ru/", htmlContent, "text/html", "windows-1251", null)
+            GameContentHolder.htmlContent = null // Clear the content after use
         } else {
-            // This should not happen in the normal flow
+            // This might happen if the user manually starts MainActivity
+            // or if there was an error in the auth flow.
             goToLogin()
         }
     }
