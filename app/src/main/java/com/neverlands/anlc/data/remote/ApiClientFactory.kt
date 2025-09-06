@@ -6,7 +6,6 @@ import okhttp3.ConnectionSpec
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
-import retrofit2.converter.scalars.ScalarsConverterFactory
 import java.util.Collections
 
 object ApiClientFactory {
@@ -26,7 +25,6 @@ object ApiClientFactory {
     private val retrofit: Retrofit = Retrofit.Builder()
         .baseUrl("http://neverlands.ru/")
         .client(okHttpClient)
-        .addConverterFactory(ScalarsConverterFactory.create())
         .build()
 
     val apiClient: ApiClient = retrofit.create(ApiClient::class.java)

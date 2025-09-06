@@ -21,7 +21,7 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
     val authResult: LiveData<AuthResult> = _authResult
 
     fun loadProfiles() {
-        _profiles.value = ProfileManager.getProfiles()
+        _profiles.value = ArrayList(ProfileManager.getProfiles())
     }
 
     fun authorize(profile: Profile, password: String) {

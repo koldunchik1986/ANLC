@@ -1,8 +1,8 @@
 package com.neverlands.anlc.data.remote
 
 import android.content.Context
+import android.net.Uri
 import android.webkit.CookieManager
-import com.neverlands.anlc.data.GameContentHolder
 import com.neverlands.anlc.data.local.model.Profile
 import com.neverlands.anlc.data.remote.api.ApiClient
 import com.neverlands.anlc.util.CryptoHelper
@@ -13,7 +13,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import okhttp3.Cookie
+import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -22,14 +22,14 @@ import java.util.Locale
 typealias AuthCallback = (result: AuthResult) -> Unit
 
 sealed class AuthResult {
-    object Success : AuthResult()
+    data class Success(val contentUri: Uri) : AuthResult()
     data class Failure(val error: String) : AuthResult()
 }
 
 object AuthRepository {
 
     private val apiClient: ApiClient = ApiClientFactory.apiClient
-    private val cookieJar = ApiClientFactory.cookieJar as WebViewCookieJar
+    private val cookieJar = ApiClientFactory.cookieJar
 
     private var heartbeatJob: Job? = null
 
@@ -50,46 +50,26 @@ object AuthRepository {
                 }
 
                 if (profile.autoClearCookies) {
-                    cookieJar.clearCookies("neverlands.ru")
+                    (cookieJar as WebViewCookieJar).clearCookies("neverlands.ru")
                     FileLogger.log(context, "Старые куки для neverlands.ru очищены.")
                 }
 
-                // Step 1: GET / to get initial cookies
-                FileLogger.log(context, "GET /")
-                val initialResponse = apiClient.getInitialPage()
-                if (!initialResponse.isSuccessful) {
-                    withContext(Dispatchers.Main) { callback(AuthResult.Failure("Ошибка получения стартовой страницы: ${initialResponse.code()}")) }
-                    return@launch
-                }
-                FileLogger.log(context, "GET / - Успех. Код: ${initialResponse.code()}")
+                apiClient.getInitialPage().body()?.close()
+                apiClient.login(profile.userNick, gamePassword).body()?.close()
 
-                // Step 2: POST /game.php with credentials
-                FileLogger.log(context, "POST /game.php")
-                val loginResponse = apiClient.login(profile.userNick, gamePassword)
-                if (!loginResponse.isSuccessful) {
-                    withContext(Dispatchers.Main) { callback(AuthResult.Failure("Ошибка входа: ${loginResponse.code()}")) }
-                    return@launch
-                }
-                FileLogger.log(context, "POST /game.php - Успех. Код: ${loginResponse.code()}")
-
-                // Step 3: GET /main.php to get the game page
-                FileLogger.log(context, "GET /main.php")
                 val mainPageResponse = apiClient.getMainPage()
                 if (!mainPageResponse.isSuccessful) {
                     withContext(Dispatchers.Main) { callback(AuthResult.Failure("Ошибка получения главной страницы: ${mainPageResponse.code()}")) }
                     return@launch
                 }
-                val mainPageBody = mainPageResponse.body() ?: ""
-                FileLogger.log(context, "GET /main.php - Успех. Код: ${mainPageResponse.code()}")
+                val mainPageBodyBytes = mainPageResponse.body()?.bytes() ?: ByteArray(0)
+                FileLogger.log(context, "Raw response bytes (hex): ${mainPageBodyBytes.joinToString(" ") { "%02x".format(it) }}")
 
-                // Step 4: Check for login errors
-                if (mainPageBody.contains("auth_form") || mainPageBody.contains("неверный пароль")) {
-                    withContext(Dispatchers.Main) { callback(AuthResult.Failure("Неверный логин или пароль.")) }
-                    return@launch
-                }
+                val tempFile = File.createTempFile("game_content", ".html", context.cacheDir)
+                tempFile.writeBytes(mainPageBodyBytes)
+                val contentUri = Uri.fromFile(tempFile)
 
-                GameContentHolder.htmlContent = mainPageBody
-                withContext(Dispatchers.Main) { callback(AuthResult.Success) }
+                withContext(Dispatchers.Main) { callback(AuthResult.Success(contentUri)) }
 
             } catch (e: Exception) {
                 val errorMsg = "Критическая ошибка авторизации: ${e.javaClass.simpleName}: ${e.message}"
@@ -104,12 +84,10 @@ object AuthRepository {
         heartbeatJob = CoroutineScope(Dispatchers.IO).launch {
             while (isActive) {
                 try {
-                    val response = apiClient.getMainPage()
-                    if (response.isSuccessful) {
-                        val currentTime = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
-                        withContext(Dispatchers.Main) {
-                            onHeartbeat(currentTime)
-                        }
+                    apiClient.getMainPage().body()?.close()
+                    val currentTime = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+                    withContext(Dispatchers.Main) {
+                        onHeartbeat(currentTime)
                     }
                 } catch (e: IOException) {
                     // Handle network error

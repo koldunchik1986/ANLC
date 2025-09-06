@@ -58,7 +58,6 @@ class ProfilesActivity : BaseActivity() {
         binding.deleteButton.setOnClickListener {
             selectedProfile?.let { profile ->
                 viewModel.removeProfile(profile)
-                showToast("Профиль ${profile.userNick} удален.")
                 selectedProfile = null
             } ?: showToast("Пожалуйста, выберите профиль для удаления")
         }
@@ -88,7 +87,9 @@ class ProfilesActivity : BaseActivity() {
                 is AuthResult.Success -> {
                     selectedProfile?.let { profile ->
                         ProfileManager.setCurrentProfile(profile)
-                        val intent = Intent(this, MainActivity::class.java)
+                        val intent = Intent(this, MainActivity::class.java).apply {
+                            putExtra("content_uri", result.contentUri.toString())
+                        }
                         startActivity(intent)
                         finish()
                     }
