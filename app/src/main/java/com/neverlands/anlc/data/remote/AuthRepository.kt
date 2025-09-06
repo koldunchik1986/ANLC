@@ -3,7 +3,10 @@ package com.neverlands.anlc.data.remote
 import android.content.Context
 import android.net.Uri
 import android.webkit.CookieManager
+import com.neverlands.anlc.data.GameContentHolder
 import com.neverlands.anlc.data.local.model.Profile
+import com.neverlands.anlc.data.postfilter.PostFilter
+import com.neverlands.anlc.data.processor.InventoryProcessor
 import com.neverlands.anlc.data.remote.api.ApiClient
 import com.neverlands.anlc.util.CryptoHelper
 import kotlinx.coroutines.CoroutineScope
@@ -22,7 +25,7 @@ import java.util.Locale
 typealias AuthCallback = (result: AuthResult) -> Unit
 
 sealed class AuthResult {
-    data class Success(val contentUri: Uri) : AuthResult()
+    data class Success(val htmlContent: String? = null, val useHolder: Boolean = false) : AuthResult()
     data class Failure(val error: String) : AuthResult()
 }
 
@@ -62,14 +65,20 @@ object AuthRepository {
                     withContext(Dispatchers.Main) { callback(AuthResult.Failure("Ошибка получения главной страницы: ${mainPageResponse.code()}")) }
                     return@launch
                 }
-                val mainPageBodyBytes = mainPageResponse.body()?.bytes() ?: ByteArray(0)
-                FileLogger.log(context, "Raw response bytes (hex): ${mainPageBodyBytes.joinToString(" ") { "%02x".format(it) }}")
+                var mainPageBodyBytes = mainPageResponse.body()?.bytes() ?: ByteArray(0)
+                var mainPageBody = String(mainPageBodyBytes, charset("windows-1251"))
 
-                val tempFile = File.createTempFile("game_content", ".html", context.cacheDir)
-                tempFile.writeBytes(mainPageBodyBytes)
-                val contentUri = Uri.fromFile(tempFile)
+                if (mainPageBody.contains("/invent/0.gif")) {
+                    mainPageBody = InventoryProcessor.processInventory(mainPageBody)
+                }
 
-                withContext(Dispatchers.Main) { callback(AuthResult.Success(contentUri)) }
+                // Decide whether to pass directly or use GameContentHolder
+                if (mainPageBody.length < 500 * 1024) { // Example threshold: 500KB
+                    withContext(Dispatchers.Main) { callback(AuthResult.Success(htmlContent = mainPageBody)) }
+                } else {
+                    GameContentHolder.htmlContent = mainPageBody
+                    withContext(Dispatchers.Main) { callback(AuthResult.Success(useHolder = true)) }
+                }
 
             } catch (e: Exception) {
                 val errorMsg = "Критическая ошибка авторизации: ${e.javaClass.simpleName}: ${e.message}"

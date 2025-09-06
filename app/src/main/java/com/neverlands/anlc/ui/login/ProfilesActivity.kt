@@ -28,7 +28,25 @@ class ProfilesActivity : BaseActivity() {
 
         setupViews()
         setupObservers()
-        viewModel.loadProfiles()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Load profiles when the activity resumes to ensure the list is up-to-date
+        // This handles cases where a profile is added/edited/deleted in ProfileEditActivity
+        // and we return to ProfilesActivity.
+        ProfileManager.profiles.value?.let { currentProfiles ->
+            val adapter = ArrayAdapter(
+                this,
+                android.R.layout.simple_list_item_single_choice,
+                currentProfiles.map { it.userNick }
+            )
+            binding.profilesListView.adapter = adapter
+            binding.profilesListView.choiceMode = android.widget.ListView.CHOICE_MODE_SINGLE
+            binding.profilesListView.setOnItemClickListener { _, _, position, _ ->
+                selectedProfile = currentProfiles[position]
+            }
+        }
     }
 
     private fun setupViews() {
@@ -88,7 +106,11 @@ class ProfilesActivity : BaseActivity() {
                     selectedProfile?.let { profile ->
                         ProfileManager.setCurrentProfile(profile)
                         val intent = Intent(this, MainActivity::class.java).apply {
-                            putExtra("content_uri", result.contentUri.toString())
+                            if (result.useHolder) {
+                                putExtra("use_holder", true)
+                            } else {
+                                putExtra("html_content", result.htmlContent)
+                            }
                         }
                         startActivity(intent)
                         finish()

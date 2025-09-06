@@ -16,6 +16,7 @@ import android.widget.TabHost
 import androidx.activity.viewModels
 import androidx.lifecycle.lifecycleScope
 import com.neverlands.anlc.R
+import com.neverlands.anlc.data.GameContentHolder
 import com.neverlands.anlc.data.local.ProfileManager
 import com.neverlands.anlc.databinding.ActivityMainBinding
 import com.neverlands.anlc.forms.LogListActivity
@@ -28,8 +29,6 @@ import com.neverlands.anlc.data.local.ChatProcessor
 import com.neverlands.anlc.data.remote.FileLogger
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import org.apache.commons.text.StringEscapeUtils
-import java.io.File
 
 class MainActivity : BaseActivity() {
 
@@ -61,13 +60,15 @@ class MainActivity : BaseActivity() {
             return
         }
 
-        val contentUriString = intent.getStringExtra("content_uri")
-        if (contentUriString != null) {
-            val contentUri = Uri.parse(contentUriString)
-            val file = File(contentUri.path!!)
-            val htmlContent = String(file.readBytes(), charset("windows-1251"))
+        val htmlContent: String? = if (intent.getBooleanExtra("use_holder", false)) {
+            GameContentHolder.htmlContent
+        } else {
+            intent.getStringExtra("html_content")
+        }
+
+        if (htmlContent != null) {
             browserGame.loadDataWithBaseURL("http://neverlands.ru/", htmlContent, "text/html", "windows-1251", null)
-            file.delete()
+            GameContentHolder.htmlContent = null // Clear the content after use
         } else {
             goToLogin()
         }
@@ -107,19 +108,6 @@ class MainActivity : BaseActivity() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
                 FileLogger.log(applicationContext, "onPageFinished: $url")
-                
-                view?.evaluateJavascript("(function() { return document.documentElement.outerHTML; })();") { html ->
-                    if (html != null) {
-                        val unescapedHtml = if (html.length > 2) {
-                            StringEscapeUtils.unescapeJson(html.substring(1, html.length - 1))
-                        } else {
-                            html
-                        }
-                        FileLogger.log(applicationContext, "HTML of $url:\n$unescapedHtml")
-                    } else {
-                        FileLogger.log(applicationContext, "HTML for $url is null.")
-                    }
-                }
             }
 
             override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
@@ -130,8 +118,8 @@ class MainActivity : BaseActivity() {
     }
 
     private fun setupObservers() {
-        viewModel.currentTime.observe(this) {
-            statuslabelClock.text = it
+        viewModel.currentTime.observe(this) { time ->
+            statuslabelClock.text = time
         }
         lifecycleScope.launch {
             viewModel.reloadUrlEvent.collectLatest { url ->
